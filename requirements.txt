@@ -1,3 +1,4 @@
 Logging
 python-dotenv
 pydantic
+ipykernel
