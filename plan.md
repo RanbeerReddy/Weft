@@ -171,3 +171,24 @@ vs
 inferred memory from conversations
 
 Very interesting research direction.
+
+
+Load all conversation shards
+    ↓
+Merge into unified dataset
+    ↓
+Extract active branch
+    ↓
+Resolve attachments
+    ↓
+Normalize messages
+    ↓
+Embed/store/index
+
+
+
+
+
+
+extract_data
+|
