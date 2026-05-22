@@ -4,3 +4,4 @@ weftenv/
 __pycache__/
 *.pyc
 Data/
+experiments/
