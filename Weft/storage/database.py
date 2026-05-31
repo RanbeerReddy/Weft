@@ -1,8 +1,10 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 
+
+
 DATABASE_URL = (
-    "postgresql+psycopg://weft:weft123@localhost:5432/weft_db"
+    "postgresql+psycopg2://weft_user:weft_123@localhost:5432/weft_db"
 )
 
 engine = create_engine(

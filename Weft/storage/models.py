@@ -5,13 +5,16 @@ from sqlalchemy import (
     Text,
     Boolean,
     DateTime,
-    ForeignKey
+    ForeignKey,
+    BigInteger,
+    Integer
 )
 
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 
-from db.database import Base
+from Weft.storage.database import Base, engine
+
 
 
 class Conversation(Base):
@@ -111,3 +114,8 @@ class Chunk(Base):
     chunk_text: Mapped[str] = mapped_column(
         Text
     )
+
+if __name__=="__main__":
+    # Create all tables defined in models.py
+    Base.metadata.create_all(bind=engine)
+

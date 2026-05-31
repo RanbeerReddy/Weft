@@ -25,5 +25,7 @@ pytest-asyncio==1.1.0
 black==25.1.0
 ruff==0.12.11
 
+psycopg2-binary==2.9.10
+
 pandas 
 numpy
