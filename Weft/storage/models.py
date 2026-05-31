@@ -1,52 +1,113 @@
+from datetime import datetime
+
 from sqlalchemy import (
-    Column,
-    Integer,
     String,
-    DateTime,
     Text,
+    Boolean,
     DateTime,
     ForeignKey
 )
-from sqlalchemy.orm import declarative_base, relationship
 
-Base = declarative_base()
+from sqlalchemy.orm import Mapped
+from sqlalchemy.orm import mapped_column
+
+from db.database import Base
+
 
 class Conversation(Base):
-    __tablename__ = 'conversations'
-    
-    id = Column(Integer, primary_key=True)
-    title = Column(Text, nullable=False)
-    created_at = Column(DateTime)
-    update_time = Column(DateTime)
+    __tablename__ = "conversations"
+
+    id: Mapped[str] = mapped_column(
+        String,
+        primary_key=True
+    )
+
+    title: Mapped[str | None] = mapped_column(
+        Text
+    )
+
+    create_time: Mapped[datetime | None] = mapped_column(
+        DateTime
+    )
+
+    update_time: Mapped[datetime | None] = mapped_column(
+        DateTime
+    )
+
+    current_node: Mapped[str | None] = mapped_column(
+        String
+    )
+
+    model_slug: Mapped[str | None] = mapped_column(
+        String
+    )
+
+    is_archived: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False
+    )
+
 
 class Message(Base):
     __tablename__ = "messages"
 
-    id = Column(String, primary_key=True)
-    conversation_id = Column(
+    id: Mapped[str] = mapped_column(
         String,
-        ForeignKey("conversation.id", ondelete="CASCADE"),
-        nullable=False,
+        primary_key=True
     )
-    role = Column(String(50))
-    content = Column(Text)
-    create_time = Column(DateTIme)
+
+    conversation_id: Mapped[str] = mapped_column(
+        ForeignKey(
+            "conversations.id",
+            ondelete="CASCADE"
+        )
+    )
+
+    parent_id: Mapped[str | None] = mapped_column(
+        String
+    )
+
+    role: Mapped[str | None] = mapped_column(
+        String
+    )
+
+    content: Mapped[str | None] = mapped_column(
+        Text
+    )
+
+    create_time: Mapped[datetime | None] = mapped_column(
+        DateTime
+    )
+
 
 
 class Chunk(Base):
     __tablename__ = "chunks"
 
-    id = Column(Integer, primary_keys=True)
-    message_id = Column(
-        String,
-        ForeignKey("messages.id", ondelete="CASCADE"),
-        nullable=False,
-    )
-    conversation_id = Column(
-        String,
-        ForeignKey("conversation.id", ondelete="CASCADE")
-        nullable=False
+    id: Mapped[int] = mapped_column(
+        BigInteger,
+        primary_key=True,
+        autoincrement=True
     )
 
-    chunk_order = Column(Integer)
-    chunk_text = Column(Text)
+    conversation_id: Mapped[str] = mapped_column(
+        ForeignKey(
+            "conversations.id",
+            ondelete="CASCADE"
+        )
+    )
+
+    message_id: Mapped[str] = mapped_column(
+        ForeignKey(
+            "messages.id",
+            ondelete="CASCADE"
+        )
+    )
+
+    chunk_order: Mapped[int] = mapped_column(
+        Integer
+    )
+
+    chunk_text: Mapped[str] = mapped_column(
+        Text
+    )
