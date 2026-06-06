@@ -1,5 +1,6 @@
 from datetime import datetime
 
+
 from sqlalchemy import (
     String,
     Text,
@@ -7,7 +8,8 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     BigInteger,
-    Integer
+    Integer,
+    JSON
 )
 
 from sqlalchemy.orm import Mapped
@@ -114,6 +116,42 @@ class Chunk(Base):
     chunk_text: Mapped[str] = mapped_column(
         Text
     )
+
+class Embedding(Base):
+    __tablename__ = "embeddings"
+
+    id: Mapped[int] = mapped_column(
+        BigInteger,
+        primary_key=True,
+        autoincrement=True
+    )
+
+    conversation_id: Mapped[str] = mapped_column(
+        ForeignKey(
+            "conversations.id",
+            ondelete="CASCADE"
+        )
+    )
+
+    message_id: Mapped[str] = mapped_column(
+        ForeignKey(
+            "messages.id",
+            ondelete="CASCADE"
+        )
+    )
+
+    chunk_id: Mapped[int] = mapped_column(
+        ForeignKey(
+            "chunks.id",
+            ondelete="CASCADE"
+        )
+    )
+
+    embedding = mapped_column(
+        JSON
+    )
+
+
 
 if __name__=="__main__":
     # Create all tables defined in models.py
