@@ -140,17 +140,15 @@ class Embedding(Base):
         )
     )
 
-    chunk_id: Mapped[int] = mapped_column(
+    chunk_order: Mapped[int] = mapped_column(
         ForeignKey(
             "chunks.id",
             ondelete="CASCADE"
         )
     )
 
-    embedding = mapped_column(
-        JSON
-    )
-
+    embedding_vector: Mapped[list[float]] = mapped_column(
+        JSON    )
 
 
 if __name__=="__main__":
