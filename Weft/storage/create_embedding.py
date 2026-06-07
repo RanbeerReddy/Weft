@@ -25,7 +25,7 @@ def create_embeddings():
             embedding = Embedding(
                 conversation_id=chunk.conversation_id,
                 message_id=chunk.message_id,
-                chunk_order=chunk.chunk_order,
+                chunk_order=chunk.id,
                 embedding_vector=embedding_vector
             )
             db.add(embedding)
