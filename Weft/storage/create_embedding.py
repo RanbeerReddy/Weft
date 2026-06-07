@@ -38,3 +38,5 @@ def create_embeddings():
         db.close()
     
 
+if __name__ == "__main__":
+    create_embeddings()
