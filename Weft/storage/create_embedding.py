@@ -9,17 +9,25 @@ from Weft.storage.database import SessionLocal
 model = SentenceTransformer(
     "BAAI/bge-small-en-v1.5"
 )
-
 def create_embeddings():
+    print("Connecting to database...")
     db = SessionLocal()
     try:
-        # 1. Fetch all chunks safely so we don't hold the DB cursor open during heavy ML encoding
+        print("Fetching chunks from database...")
         chunks = db.scalars(select(Chunk)).all()
         
+        print(f"Found {len(chunks)} chunks to process.")
+        if not chunks:
+            print("Stopping: No chunks found in the database. Add chunks first!")
+            return
+
         embeddings_to_add = []
         
-        for chunk in chunks:
-            # pgvector natively accepts this standard Python list of floats
+        print("Starting embedding generation (this might take a moment)...")
+        for i, chunk in enumerate(chunks, 1):
+            # Diagnostic progress counter
+            print(f"Encoding chunk {i}/{len(chunks)} (ID: {chunk.id})...", end="\r")
+            
             embedding_vector = model.encode(
                 chunk.chunk_text,
                 normalize_embeddings=True
@@ -28,23 +36,23 @@ def create_embeddings():
             embedding = Embedding(
                 conversation_id=chunk.conversation_id,
                 message_id=chunk.message_id,
-                chunk_order=chunk.id,   # Using chunk.id maps nicely to chunk_order
+                chunk_order=chunk.id,
                 embedding_vector=embedding_vector
             )
             embeddings_to_add.append(embedding)
         
-        # 2. Performance Fix: Bulk insert instead of adding one-by-one in a loop
+        print("\nAll embeddings generated. Committing to PostgreSQL...")
         if embeddings_to_add:
             db.add_all(embeddings_to_add)
             db.commit()
-            print(f"Successfully generated and stored {len(embeddings_to_add)} vector embeddings.")
+            print(f"Success! Stored {len(embeddings_to_add)} vector embeddings.")
             
-    except WeftException as e: # Catch all database errors, not just custom WeftExceptions
-        db.rollback()      # Crucial: Roll back the transaction if something fails
-        print(f"Error creating embeddings: {str(e)}")
+    except Exception as e:
+        db.rollback()
+        print(f"\n[CRITICAL ERROR] Execution failed: {str(e)}")
     finally:
         db.close()
-    
+        print("Database session closed.")
 
 if __name__ == "__main__":
     create_embeddings()
