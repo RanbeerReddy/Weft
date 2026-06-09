@@ -9,8 +9,10 @@ from sqlalchemy import (
     ForeignKey,
     BigInteger,
     Integer,
-    JSON
+    JSON,
+    
 )
+from pgvector.sqlalchemy import Vector
 
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
@@ -148,7 +150,8 @@ class Embedding(Base):
     )
 
     embedding_vector: Mapped[list[float]] = mapped_column(
-        JSON    )
+        Vector(384)
+    )
 
 
 if __name__=="__main__":

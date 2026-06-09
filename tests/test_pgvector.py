@@ -1,6 +1,6 @@
 import sqlalchemy
 from sqlalchemy import select, text
-
+from pgvector.sqlalchemy import Vector
 from sentence_transformers import SentenceTransformer
 from Weft.storage.models import Embedding, Chunk   
 from Weft.utils.exceptions import WeftException 
@@ -15,26 +15,24 @@ def test_embedding_vector(query: str):
     db = SessionLocal()
     vector_embedding = model.encode(query, normalize_embeddings=True).tolist()
 
-    vectors = db.scalars(
-        select(Embedding.embedding_vector)
-    )
+    distance_attr = Embedding.embedding_vector.cosine_distance(vector_embedding)
+
     print(f"Embedding vector for '{query}': {vector_embedding}")
     print(f"Vectors from database: {len(list(vectors))}")
 
-    sql_query = text("""
-SELECT
-                     conversation_id,
-                     message_id,
-                     chunk_order,
-                     embedding_vector <=> :vector_embedding AS distance
-FROM embeddings
-ORDER BY distance
-                     Limit 10         
-"""
+    stmt = (
+        select(
+            Embedding.conversation_id,
+            Embedding.message_id,
+            Embedding.chunk_order,
+            distance_attr.label("distance")
+        )
+        .order_by("distance")
+        .limit(10)
     )
     try:
         result = db.execute(
-            sql_query,
+            stmt,
             {"vector_embedding": vector_embedding}
         ).fetchall()
         print("Top 10 closest embeddings:")

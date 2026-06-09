@@ -56,6 +56,7 @@ packaging==26.0
 pandas==3.0.3
 parso @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_parso_1777722955/work
 pathspec==1.1.1
+pgvector==0.4.2
 platformdirs @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_platformdirs_1775741140/work
 pluggy==1.6.0
 prompt_toolkit @ file:///home/conda/feedstock_root/build_artifacts/prompt-toolkit_1756321756983/work
