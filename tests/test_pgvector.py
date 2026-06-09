@@ -1,7 +1,7 @@
 import sqlalchemy
 from sqlalchemy import select
 from sentence_transformers import SentenceTransformer
-from Weft.storage.models import Embedding
+from Weft.storage.models import Embedding, Chunk
 from Weft.storage.database import SessionLocal
 
 model = SentenceTransformer(
@@ -24,6 +24,7 @@ def test_embedding_vector(query: str):
                 Embedding.conversation_id,
                 Embedding.message_id,
                 Embedding.chunk_order,
+                Chunk.chunk_text,
                 distance_attr.label("distance")
             )
             .order_by("distance") # Strings or labels work perfectly here
@@ -39,6 +40,7 @@ def test_embedding_vector(query: str):
                 f"Conversation ID: {row.conversation_id} | "
                 f"Message ID: {row.message_id} | "
                 f"Chunk Order: {row.chunk_order} | "
+                f"Chunk Text: {row.chunk_text} | "
                 f"Distance: {row.distance:.4f}" # Format distance to 4 decimal places
             )
             
@@ -49,4 +51,4 @@ def test_embedding_vector(query: str):
 
 
 if __name__ == "__main__":
-    test_embedding_vector("what is my CP project?")
+    test_embedding_vector("Who is ranbeer reddy?")
