@@ -9,6 +9,27 @@ from Weft.storage.database import SessionLocal
 model = SentenceTransformer(
     "BAAI/bge-small-en-v1.5"
 )
+
+from sqlalchemy import delete
+from Weft.storage.database import SessionLocal
+from Weft.storage.models import Embedding
+
+def clear_embeddings():
+    print("Connecting to database...")
+    db = SessionLocal()
+    try:
+        print("Deleting all embeddings...")
+        db.execute(delete(Embedding))
+        db.commit()
+        print("All embeddings have been deleted.")
+    except Exception as e:
+        db.rollback()
+        print(f"[ERROR] Failed to delete embeddings: {str(e)}")
+    finally:
+        db.close()
+        print("Database session closed.")
+
+
 def create_embeddings():
     print("Connecting to database...")
     db = SessionLocal()
@@ -21,7 +42,6 @@ def create_embeddings():
             print("Stopping: No chunks found in the database. Add chunks first!")
             return
 
-        embeddings_to_add = []
         
         print("Starting embedding generation (this might take a moment)...")
         for i, chunk in enumerate(chunks, 1):
@@ -39,15 +59,12 @@ def create_embeddings():
                 chunk_order=chunk.id,
                 embedding_vector=embedding_vector
             )
-            embeddings_to_add.append(embedding)
-        
-        print("\nAll embeddings generated. Committing to PostgreSQL...")
-        if embeddings_to_add:
-            db.add_all(embeddings_to_add)
-            db.commit()
-            print(f"Success! Stored {len(embeddings_to_add)} vector embeddings.")
+            db.add(embedding)
+        db.commit()
+        print(f"\nSuccessfully created embeddings for {len(chunks)} chunks.")
             
-    except Exception as e:
+            
+    except WeftException as e:
         db.rollback()
         print(f"\n[CRITICAL ERROR] Execution failed: {str(e)}")
     finally:
@@ -55,5 +72,6 @@ def create_embeddings():
         print("Database session closed.")
 
 if __name__ == "__main__":
+    #clear_embeddings()
     create_embeddings()
     
