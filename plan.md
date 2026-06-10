@@ -1,6 +1,9 @@
  use both for Similarity and graph rag for retrival.
  use similarity for global memory like memories, custom interactions. things which would apply globally.
  use graphRAG for convo's
+
+think of properly utilizing the question and answer in your chunking quality
+
  
                 ┌────────────────────┐
                 │  AI Chat Exports   │

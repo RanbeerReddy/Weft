@@ -27,7 +27,11 @@ def test_embedding_vector(query: str):
                 Chunk.chunk_text,
                 distance_attr.label("distance")
             )
-            .order_by("distance") # Strings or labels work perfectly here
+            .join(
+                Chunk,
+                Chunk.id == Embedding.chunk_order
+            )
+            .order_by("distance")
             .limit(10)
         )
         
@@ -51,4 +55,4 @@ def test_embedding_vector(query: str):
 
 
 if __name__ == "__main__":
-    test_embedding_vector("Who is ranbeer reddy?")
+    test_embedding_vector("what do u think of the economic outlook for the next 5 years?")
