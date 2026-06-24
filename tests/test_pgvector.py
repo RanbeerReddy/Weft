@@ -10,6 +10,7 @@ model = SentenceTransformer(
 
 def test_embedding_vector(query: str):
     db = SessionLocal()
+    
     try:
         # 1. Generate the query vector
         vector_embedding = model.encode(query, normalize_embeddings=True).tolist()

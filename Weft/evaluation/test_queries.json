@@ -1,0 +1,42 @@
+[
+  {
+    "query": "what do i think about rag applications",
+    "expected_keywords": ["RAG", "retrieval", "augmented", "generation"]
+  },
+  {
+    "query": "what internship was i selected for",
+    "expected_keywords": ["Sensovibe", "internship", "selected"]
+  },
+  {
+    "query": "tell me about learning strategies",
+    "expected_keywords": ["learning", "strategy", "strategies", "education"]
+  },
+  {
+    "query": "what coding projects have i worked on",
+    "expected_keywords": ["project", "code", "coding", "development"]
+  },
+  {
+    "query": "explain machine learning concepts",
+    "expected_keywords": ["machine", "learning", "ML", "algorithm"]
+  },
+  {
+    "query": "what are my thoughts on AI memory systems",
+    "expected_keywords": ["memory", "AI", "system", "knowledge"]
+  },
+  {
+    "query": "how should i improve my resume",
+    "expected_keywords": ["resume", "improve", "skills", "experience"]
+  },
+  {
+    "query": "what books or papers should i read",
+    "expected_keywords": ["book", "paper", "read", "research"]
+  },
+  {
+    "query": "give tips for internship preparation",
+    "expected_keywords": ["internship", "preparation", "tips", "interview"]
+  },
+  {
+    "query": "explain bias-variance tradeoff",
+    "expected_keywords": ["bias", "variance", "tradeoff", "error"]
+  }
+]
