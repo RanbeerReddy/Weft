@@ -1,12 +1,35 @@
-name: Dependabot schedule
+name: Dependabot Auto-Merge
 
 on:
-  schedule:
-    - cron: '0 0 * * 0'
+  pull_request:
+    types:
+      - opened
+      - synchronize
+
+permissions:
+  pull-requests: write
+  contents: write
 
 jobs:
-  weekly-check:
+  dependabot:
     runs-on: ubuntu-latest
+    if: dependabot.metadata.dependency-type == 'direct:production'
+    
     steps:
-      - name: Run weekly check
-        run: echo "Dependabot workflow triggered"
+      - name: Enable auto-merge for Dependabot PRs
+        run: |
+          echo "Dependabot PR detected"
+          echo "Dependency: ${{ dependabot.metadata.dependency-names }}"
+          echo "Update type: ${{ dependabot.metadata.update-type }}"
+        
+      - name: Auto-approve Dependabot PRs
+        if: github.actor == 'dependabot[bot]'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.pulls.createReview({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              event: 'APPROVE'
+            })

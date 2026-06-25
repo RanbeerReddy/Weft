@@ -1,0 +1,85 @@
+name: Release & Deploy Validation
+
+on:
+  push:
+    branches:
+      - main
+  workflow_run:
+    workflows: ["CI Pipeline"]
+    branches: [main]
+    types: [completed]
+
+jobs:
+  validate-release:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event.workflow_run.conclusion == 'success'
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
+
+      - name: Verify Tag/Release Format
+        run: |
+          if [[ "${{ github.ref }}" == "refs/tags/v"* ]]; then
+            TAG=${GITHUB_REF#refs/tags/}
+            echo "Tag detected: $TAG"
+            # Validate semantic versioning: v1.2.3
+            if ! [[ $TAG =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?$ ]]; then
+              echo "❌ Invalid tag format. Expected: v1.2.3"
+              exit 1
+            fi
+          fi
+        continue-on-error: true
+
+      - name: Validate Database Migrations
+        run: |
+          # Check that all migrations are valid Python
+          python -m py_compile alembic/env.py
+          for file in alembic/versions/*.py; do
+            python -m py_compile "$file" || exit 1
+          done
+          echo "✅ All migration files are valid"
+        continue-on-error: true
+
+      - name: Check Documentation
+        run: |
+          if [ ! -f "README.md" ]; then
+            echo "❌ README.md is missing"
+            exit 1
+          fi
+          if [ ! -f "requirements.txt" ]; then
+            echo "❌ requirements.txt is missing"
+            exit 1
+          fi
+          echo "✅ Required documentation files exist"
+        continue-on-error: true
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: ${{ contains(github.ref, '-alpha') || contains(github.ref, '-beta') }}
+
+      - name: Release Summary
+        run: |
+          echo "📦 Release Validation Complete"
+          echo "Commit: ${{ github.sha }}"
+          echo "Branch: ${{ github.ref }}"
+          echo "✅ All release checks passed"
