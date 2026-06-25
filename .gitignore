@@ -7,3 +7,6 @@ Data/
 experiments/
 vault/
 conversations.json
+memory_eval_results.json
+
+reranking_candidates.json

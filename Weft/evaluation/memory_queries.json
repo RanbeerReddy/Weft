@@ -1,0 +1,92 @@
+[
+  {
+    "query": "what internship was i selected for",
+    "expected_phrase": "Sensovibe",
+    "query_type": "career",
+    "notes": "Company name selection - high specificity required"
+  },
+  {
+    "query": "tell me about the weft project",
+    "expected_phrase": "Weft",
+    "query_type": "project",
+    "notes": "Project name matching - should appear in discussions"
+  },
+  {
+    "query": "what learning strategies do i use",
+    "expected_phrase": "spaced repetition",
+    "query_type": "learning",
+    "notes": "Specific technique - requires exact memory retrieval"
+  },
+  {
+    "query": "what exam am i preparing for",
+    "expected_phrase": "GATE",
+    "query_type": "education",
+    "notes": "Exam name - distinct from JEE, CAT, etc."
+  },
+  {
+    "query": "what machine learning concept was confusing",
+    "expected_phrase": "bias-variance tradeoff",
+    "query_type": "concept",
+    "notes": "Specific ML concept - case insensitive match acceptable"
+  },
+  {
+    "query": "what database technology am i using in my project",
+    "expected_phrase": "PostgreSQL",
+    "query_type": "technology",
+    "notes": "Specific database - should appear with Weft discussion"
+  },
+  {
+    "query": "what embedding model did i choose",
+    "expected_phrase": "BAAI/bge-small-en-v1.5",
+    "query_type": "technology",
+    "notes": "Exact model identifier - high specificity"
+  },
+  {
+    "query": "what internship company did i miss out on",
+    "expected_phrase": "Microsoft",
+    "query_type": "career",
+    "notes": "Company name - different from Sensovibe"
+  },
+  {
+    "query": "what are my thoughts on the indian constitution",
+    "expected_phrase": "Indian Constitution",
+    "query_type": "knowledge",
+    "notes": "Topic-specific retrieval"
+  },
+  {
+    "query": "tell me about animation and game design concepts",
+    "expected_phrase": "animation",
+    "query_type": "knowledge",
+    "notes": "Creative field - should retrieve relevant discussion"
+  },
+  {
+    "query": "how do i approach assignment breakdowns",
+    "expected_phrase": "breakdown",
+    "query_type": "learning",
+    "notes": "Methodology - specific to personal approach"
+  },
+  {
+    "query": "what interview preparation tips do i have",
+    "expected_phrase": "interview",
+    "query_type": "career",
+    "notes": "Career preparation - should find dedicated discussion"
+  },
+  {
+    "query": "what is my ats score review feedback",
+    "expected_phrase": "ATS",
+    "query_type": "career",
+    "notes": "Resume evaluation - specific metric"
+  },
+  {
+    "query": "what is the bias-variance tradeoff",
+    "expected_phrase": "bias",
+    "query_type": "concept",
+    "notes": "Fundamental ML concept - should have dedicated explanation"
+  },
+  {
+    "query": "tell me about my accounting knowledge",
+    "expected_phrase": "accounting",
+    "query_type": "knowledge",
+    "notes": "Subject area - should retrieve accounting discussion"
+  }
+]
