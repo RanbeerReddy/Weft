@@ -1,55 +1,23 @@
-name: Linting & Code Quality
+name: Lint
 
 on:
     push:
-        branches:
-            - main
-            - develop
     pull_request:
-        branches:
-            - main
-            - develop
 
 jobs:
     lint:
         runs-on: ubuntu-latest
-        
+
         steps:
-            - name: Checkout Repository
-              uses: actions/checkout@v4
+            - uses: actions/checkout@v4
 
-            - name: Setup Python 3.11
-              uses: actions/setup-python@v4
+            - uses: actions/setup-python@v5
               with:
-                python-version: "3.11"
-                cache: "pip"
+                python-version: 3.11
 
-            - name: Install Linting Tools
-              run: |
-                python -m pip install --upgrade pip
-                pip install black ruff mypy isort
+            - run: |
+                pip install black ruff mypy
 
-            - name: Run isort Check
-              run: isort --check-only Weft/ tests/
-              continue-on-error: true
-
-            - name: Run Black Formatter Check
-              run: black --check Weft/ tests/
-              continue-on-error: true
-
-            - name: Run Ruff Linter
-              run: ruff check Weft/ tests/
-              continue-on-error: true
-
-            - name: Run Type Checks (mypy)
-              run: |
-                mypy Weft/ \
-                  --ignore-missing-imports \
-                  --warn-unused-ignores \
-                  --warn-redundant-casts \
-                  --warn-unused-configs
-              continue-on-error: true
-
-            - name: Summary
-              if: always()
-              run: echo "Linting checks completed. Review warnings above."
+            - run: black --check .
+            - run: ruff check .
+            - run: mypy src/
