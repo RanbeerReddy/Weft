@@ -7,7 +7,7 @@ from typing import List, Optional
 import time
 
 from sentence_transformers import SentenceTransformer, CrossEncoder
-from sqlalchemy import select
+from sqlalchemy import select, text, func
 from sqlalchemy.orm import Session
 
 from Weft.storage.database import SessionLocal
@@ -162,4 +162,158 @@ class RetrievalPipeline:
         # Stage 2: Cross-encoder reranking
         final_results = self.reranker.rerank(query, candidates, top_k=final_k)
         
+        return final_results
+
+
+class LexicalRetriever:
+    """Handles PostgreSQL FTS (BM25) using tsvector."""
+    
+    def retrieve(self, query: str, k: int = 10, session: Optional[Session] = None) -> List[RetrievalResult]:
+        db = session or SessionLocal()
+        
+        # Convert "hello world" to "hello | world" to get OR behavior instead of strict AND
+        import re
+        clean_query = re.sub(r'[^a-zA-Z0-9 ]', '', query)
+        or_query = ' | '.join([w for w in clean_query.split() if w.strip()])
+        if not or_query:
+            return []
+            
+        try:
+            stmt = (
+                select(
+                    Chunk.conversation_id,
+                    Chunk.message_id,
+                    Chunk.chunk_order,
+                    Chunk.chunk_text,
+                    func.ts_rank_cd(Chunk.chunk_tsvector, func.to_tsquery('english', or_query)).label('rank_score')
+                )
+                .where(Chunk.chunk_tsvector.op('@@')(func.to_tsquery('english', or_query)))
+                .order_by(text('rank_score DESC'))
+                .limit(k)
+            )
+            
+            results = db.execute(stmt).fetchall()
+            
+            retrieved = []
+            for rank, row in enumerate(results, start=1):
+                retrieved.append(
+                    RetrievalResult(
+                        chunk_text=row.chunk_text,
+                        distance=-float(row.rank_score),  # Negative score to maintain "lower is better" sorting
+                        conversation_id=row.conversation_id,
+                        message_id=row.message_id,
+                        chunk_order=row.chunk_order,
+                        rank=rank
+                    )
+                )
+            
+            return retrieved
+            
+        finally:
+            if session is None:
+                db.close()
+
+
+class HybridRetriever:
+    """Fuses results from VectorRetriever and LexicalRetriever."""
+    
+    def __init__(self, vector_retriever: Optional[VectorRetriever] = None, lexical_retriever: Optional[LexicalRetriever] = None):
+        self.vector_retriever = vector_retriever or VectorRetriever()
+        self.lexical_retriever = lexical_retriever or LexicalRetriever()
+        
+    def retrieve(self, query: str, k: int = 10, fusion_strategy: str = "rrf", alpha: float = 0.5, session: Optional[Session] = None) -> List[RetrievalResult]:
+        fetch_k = max(k * 2, 60)
+        
+        vec_results = self.vector_retriever.retrieve(query, k=fetch_k, session=session)
+        lex_results = self.lexical_retriever.retrieve(query, k=fetch_k, session=session)
+        
+        if fusion_strategy == "rrf":
+            return self._rrf_fusion(vec_results, lex_results, k=k)
+        elif fusion_strategy == "linear":
+            return self._linear_fusion(vec_results, lex_results, alpha=alpha, k=k)
+        else:
+            raise ValueError(f"Unknown fusion strategy: {fusion_strategy}")
+            
+    def _rrf_fusion(self, vec_results, lex_results, k=10, rrf_k=60):
+        scores = {}
+        chunks = {}
+        
+        def get_key(r): return f"{r.conversation_id}_{r.message_id}_{r.chunk_order}"
+        
+        for rank, r in enumerate(vec_results, start=1):
+            key = get_key(r)
+            if key not in scores:
+                scores[key] = 0.0
+                chunks[key] = r
+            scores[key] += 1.0 / (rrf_k + rank)
+            
+        for rank, r in enumerate(lex_results, start=1):
+            key = get_key(r)
+            if key not in scores:
+                scores[key] = 0.0
+                chunks[key] = r
+            scores[key] += 1.0 / (rrf_k + rank)
+            
+        sorted_keys = sorted(scores.keys(), key=lambda k_id: scores[k_id], reverse=True)
+        
+        final_results = []
+        for rank, key in enumerate(sorted_keys[:k], start=1):
+            r = chunks[key]
+            final_results.append(
+                RetrievalResult(
+                    chunk_text=r.chunk_text,
+                    distance=-scores[key],
+                    conversation_id=r.conversation_id,
+                    message_id=r.message_id,
+                    chunk_order=r.chunk_order,
+                    rank=rank
+                )
+            )
+            
+        return final_results
+        
+    def _linear_fusion(self, vec_results, lex_results, alpha=0.5, k=10):
+        scores = {}
+        chunks = {}
+        
+        def get_key(r): return f"{r.conversation_id}_{r.message_id}_{r.chunk_order}"
+        
+        vec_min = min((r.distance for r in vec_results), default=0)
+        vec_max = max((r.distance for r in vec_results), default=1)
+        if vec_max == vec_min: vec_max = vec_min + 1e-5
+        
+        for r in vec_results:
+            key = get_key(r)
+            norm_score = 1.0 - ((r.distance - vec_min) / (vec_max - vec_min))
+            scores[key] = alpha * norm_score
+            chunks[key] = r
+            
+        lex_min = min((r.distance for r in lex_results), default=0)
+        lex_max = max((r.distance for r in lex_results), default=1)
+        if lex_max == lex_min: lex_max = lex_min + 1e-5
+        
+        for r in lex_results:
+            key = get_key(r)
+            norm_score = 1.0 - ((r.distance - lex_min) / (lex_max - lex_min))
+            if key not in scores:
+                scores[key] = 0.0
+                chunks[key] = r
+            scores[key] += (1.0 - alpha) * norm_score
+            
+        sorted_keys = sorted(scores.keys(), key=lambda k_id: scores[k_id], reverse=True)
+        
+        final_results = []
+        for rank, key in enumerate(sorted_keys[:k], start=1):
+            r = chunks[key]
+            final_results.append(
+                RetrievalResult(
+                    chunk_text=r.chunk_text,
+                    distance=-scores[key],
+                    conversation_id=r.conversation_id,
+                    message_id=r.message_id,
+                    chunk_order=r.chunk_order,
+                    rank=rank
+                )
+            )
+            
         return final_results

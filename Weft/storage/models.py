@@ -10,8 +10,9 @@ from sqlalchemy import (
     BigInteger,
     Integer,
     JSON,
-    
+    Index
 )
+from sqlalchemy.dialects.postgresql import TSVECTOR
 from pgvector.sqlalchemy import Vector
 
 from sqlalchemy.orm import Mapped
@@ -117,6 +118,14 @@ class Chunk(Base):
 
     chunk_text: Mapped[str] = mapped_column(
         Text
+    )
+
+    chunk_tsvector = mapped_column(
+        TSVECTOR
+    )
+
+    __table_args__ = (
+        Index("ix_chunks_tsvector", "chunk_tsvector", postgresql_using="gin"),
     )
 
 class Embedding(Base):
