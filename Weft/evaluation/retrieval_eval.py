@@ -19,23 +19,23 @@ from Weft.evaluation.metrics import (
 )
 
 
-# Model loaded at module level (can be slow)
-MODEL = None
+from Weft.core.retrieval import VectorRetriever
 
 
-def get_model() -> SentenceTransformer:
-    """Lazily load embedding model."""
-    global MODEL
-    if MODEL is None:
-        print("[*] Loading embedding model: BAAI/bge-small-en-v1.5")
-        MODEL = SentenceTransformer("BAAI/bge-small-en-v1.5")
-    return MODEL
+# Initialize vector retriever at module level (can be slow)
+RETRIEVER = None
+
+
+def get_retriever() -> VectorRetriever:
+    """Lazily load vector retriever."""
+    global RETRIEVER
+    if RETRIEVER is None:
+        RETRIEVER = VectorRetriever()
+    return RETRIEVER
 
 
 def retrieve_top_k(query: str, k: int = 10) -> List[RetrievalResult]:
-    """Retrieve top-k chunks for a query.
-    
-    Replicates the retrieval logic from tests/test_pgvector.py.
+    """Retrieve top-k chunks for a query using VectorRetriever.
     
     Args:
         query: Search query string.
@@ -44,54 +44,8 @@ def retrieve_top_k(query: str, k: int = 10) -> List[RetrievalResult]:
     Returns:
         List of RetrievalResult objects, ranked by distance.
     """
-    model = get_model()
-    db = SessionLocal()
-    
-    try:
-        # 1. Encode query
-        vector_embedding = model.encode(query, normalize_embeddings=True).tolist()
-        
-        # 2. Compute distance
-        distance_attr = Embedding.embedding_vector.cosine_distance(vector_embedding)
-        
-        # 3. Build query
-        stmt = (
-            select(
-                Embedding.conversation_id,
-                Embedding.message_id,
-                Embedding.chunk_order,
-                Chunk.chunk_text,
-                distance_attr.label("distance")
-            )
-            .join(Chunk, Chunk.id == Embedding.chunk_order)
-            .order_by("distance")
-            .limit(k)
-        )
-        
-        # 4. Execute
-        results = db.execute(stmt).fetchall()
-        
-        # 5. Convert to RetrievalResult objects with rank
-        retrieved = []
-        for rank, row in enumerate(results, start=1):
-            retrieved.append(
-                RetrievalResult(
-                    chunk_text=row.chunk_text,
-                    distance=float(row.distance),
-                    conversation_id=row.conversation_id,
-                    message_id=row.message_id,
-                    chunk_order=row.chunk_order,
-                    rank=rank
-                )
-            )
-        
-        return retrieved
-        
-    except Exception as e:
-        print(f"[!] Retrieval error for query '{query}': {e}")
-        return []
-    finally:
-        db.close()
+    retriever = get_retriever()
+    return retriever.retrieve(query, k=k)
 
 
 def load_test_queries(queries_file: str = None) -> List[Dict[str, Any]]:
