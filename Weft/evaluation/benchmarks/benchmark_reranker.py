@@ -7,8 +7,8 @@ from typing import List, Dict, Any, Tuple
 import statistics
 
 from Weft.core.retrieval import VectorRetriever, RetrievalPipeline, CrossEncoderReranker
-from Weft.evaluation.metrics import MetricsCalculator, RetrievalResult
-from Weft.evaluation.retrieval_eval import load_test_queries
+from Weft.evaluation.core.metrics import MetricsCalculator, RetrievalResult
+from Weft.evaluation.core.retrieval_eval import load_test_queries
 
 
 def evaluate_system(queries: List[Dict[str, Any]], 

@@ -11,7 +11,7 @@ from sqlalchemy import select
 
 from Weft.storage.database import SessionLocal
 from Weft.storage.models import Embedding, Chunk
-from Weft.evaluation.metrics import (
+from Weft.evaluation.core.metrics import (
     RetrievalResult,
     MetricsCalculator,
     EvaluationSummary,

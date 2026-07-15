@@ -24,7 +24,7 @@ from sqlalchemy import select, func
 
 from Weft.storage.database import SessionLocal
 from Weft.storage.models import Message, Chunk, Conversation
-from Weft.evaluation.memory_metrics import MemoryMetricsCalculator
+from Weft.evaluation.core.memory_metrics import MemoryMetricsCalculator
 
 # Import the splitter to simulate chunk generation
 from langchain_text_splitters import RecursiveCharacterTextSplitter

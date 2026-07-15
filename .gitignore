@@ -9,8 +9,8 @@ vault/
 conversations.json
 memory_eval_results.json
 
-reranking_candidates.json
-*_report.json
-reranking_dataset.json
-Weft/evaluation/*_report.md
-Weft/evaluation/final_report.md
+Weft/evaluation/data/reranking_candidates.json
+Weft/evaluation/reports/*_report.json
+Weft/evaluation/data/reranking_dataset.json
+Weft/evaluation/reports/*_report.md
+Weft/evaluation/reports/final_report.md

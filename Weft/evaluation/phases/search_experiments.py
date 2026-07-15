@@ -26,7 +26,7 @@ from sqlalchemy import select, func, text, cast, String
 
 from Weft.storage.database import SessionLocal
 from Weft.storage.models import Embedding, Chunk, Message, Conversation
-from Weft.evaluation.memory_metrics import (
+from Weft.evaluation.core.memory_metrics import (
     MemoryMetricsCalculator,
     MemoryRetrievalResult,
     MemoryQueryMetrics,

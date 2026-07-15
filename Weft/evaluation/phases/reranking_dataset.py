@@ -26,7 +26,7 @@ from sqlalchemy import select, func
 
 from Weft.storage.database import SessionLocal
 from Weft.storage.models import Embedding, Chunk, Message, Conversation
-from Weft.evaluation.memory_metrics import MemoryMetricsCalculator
+from Weft.evaluation.core.memory_metrics import MemoryMetricsCalculator
 
 
 MODEL = None
@@ -125,9 +125,9 @@ def run_reranking_preparation(
 
     # Load queries
     if memory_queries_path is None:
-        memory_queries_path = str(Path(__file__).parent / "memory_queries.json")
+        memory_queries_path = str(Path(__file__).parent.parent / "data" / "memory_queries.json")
 
-    with open(memory_queries_path, "r", encoding="utf-8") as f:
+    with open("Weft/evaluation/reports/search_experiments_report.json", "r", encoding="utf-8") as f:
         queries = json.load(f)
     print(f"[+] Loaded {len(queries)} benchmark queries")
 
@@ -238,7 +238,7 @@ def main():
     parser.add_argument(
         "--output",
         type=str,
-        default="reranking_dataset.json",
+        default="Weft/evaluation/data/reranking_dataset.json",
         help="Output dataset file",
     )
     args = parser.parse_args()

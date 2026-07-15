@@ -33,7 +33,7 @@ from sqlalchemy import select, func
 
 from Weft.storage.database import SessionLocal
 from Weft.storage.models import Embedding, Chunk, Message, Conversation
-from Weft.evaluation.memory_metrics import MemoryMetricsCalculator
+from Weft.evaluation.core.memory_metrics import MemoryMetricsCalculator
 
 
 MODEL = None

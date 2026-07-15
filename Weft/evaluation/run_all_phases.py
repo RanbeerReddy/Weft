@@ -13,13 +13,13 @@ from pathlib import Path
 from datetime import datetime
 
 # Phase imports
-from Weft.evaluation.ingestion_audit import run_audit
-from Weft.evaluation.corpus_validator import run_validation
-from Weft.evaluation.failure_analysis import run_failure_analysis
-from Weft.evaluation.embedding_analysis import run_embedding_analysis
-from Weft.evaluation.chunk_analysis import run_chunk_analysis
-from Weft.evaluation.search_experiments import run_experiments
-from Weft.evaluation.reranking_dataset import run_reranking_preparation
+from Weft.evaluation.phases.ingestion_audit import run_audit
+from Weft.evaluation.phases.corpus_validator import run_validation
+from Weft.evaluation.phases.failure_analysis import run_failure_analysis
+from Weft.evaluation.phases.embedding_analysis import run_embedding_analysis
+from Weft.evaluation.phases.chunk_analysis import run_chunk_analysis
+from Weft.evaluation.phases.search_experiments import run_experiments
+from Weft.evaluation.phases.reranking_dataset import run_reranking_preparation
 
 
 def save_report(data: dict, filename: str):
@@ -47,7 +47,7 @@ def run_all():
     print("#" * 70)
     try:
         report = run_audit("conversations.json")
-        save_report(report, "ingestion_audit_report.json")
+        save_report(report, "Weft/evaluation/reports/ingestion_audit_report.json")
         all_reports["phase_1"] = report
     except Exception as e:
         print(f"[!] Phase 1 failed: {e}")
@@ -59,7 +59,7 @@ def run_all():
     print("#" * 70)
     try:
         report = run_validation()
-        save_report(report, "corpus_validation_report.json")
+        save_report(report, "Weft/evaluation/reports/corpus_validation_report.json")
         all_reports["phase_2"] = report
     except Exception as e:
         print(f"[!] Phase 2 failed: {e}")
@@ -71,7 +71,7 @@ def run_all():
     print("#" * 70)
     try:
         report = run_failure_analysis()
-        save_report(report, "failure_analysis_report.json")
+        save_report(report, "Weft/evaluation/reports/failure_analysis_report.json")
         all_reports["phase_3"] = report
     except Exception as e:
         print(f"[!] Phase 3 failed: {e}")
@@ -83,7 +83,7 @@ def run_all():
     print("#" * 70)
     try:
         report = run_embedding_analysis()
-        save_report(report, "embedding_analysis_report.json")
+        save_report(report, "Weft/evaluation/reports/embedding_analysis_report.json")
         all_reports["phase_4"] = report
     except Exception as e:
         print(f"[!] Phase 4 failed: {e}")
@@ -95,7 +95,7 @@ def run_all():
     print("#" * 70)
     try:
         report = run_chunk_analysis()
-        save_report(report, "chunk_analysis_report.json")
+        save_report(report, "Weft/evaluation/reports/chunk_analysis_report.json")
         all_reports["phase_5"] = report
     except Exception as e:
         print(f"[!] Phase 5 failed: {e}")
@@ -107,7 +107,7 @@ def run_all():
     print("#" * 70)
     try:
         report = run_experiments()
-        save_report(report, "search_experiments_report.json")
+        save_report(report, "Weft/evaluation/reports/search_experiments_report.json")
         all_reports["phase_6"] = report
     except Exception as e:
         print(f"[!] Phase 6 failed: {e}")
@@ -119,7 +119,7 @@ def run_all():
     print("#" * 70)
     try:
         report = run_reranking_preparation()
-        save_report(report, "reranking_dataset.json")
+        save_report(report, "Weft/evaluation/data/reranking_dataset.json")
         all_reports["phase_7"] = report
     except Exception as e:
         print(f"[!] Phase 7 failed: {e}")

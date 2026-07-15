@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 
 from Weft.storage.database import SessionLocal
 from Weft.storage.models import Embedding, Chunk
-from Weft.evaluation.metrics import RetrievalResult
+from Weft.evaluation.core.metrics import RetrievalResult
 
 
 class VectorRetriever:

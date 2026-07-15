@@ -5,7 +5,7 @@ import time
 from typing import List, Dict, Any, Tuple
 
 from Weft.core.retrieval import CrossEncoderReranker
-from Weft.evaluation.metrics import MetricsCalculator, RetrievalResult
+from Weft.evaluation.core.metrics import MetricsCalculator, RetrievalResult
 
 
 def evaluate_system(dataset: List[Dict[str, Any]], 
@@ -75,7 +75,7 @@ def evaluate_system(dataset: List[Dict[str, Any]],
 def run_benchmark():
     """Run baseline vs reranker benchmark offline."""
     try:
-        with open("reranking_dataset.json", "r", encoding="utf-8") as f:
+        with open("Weft/evaluation/data/reranking_dataset.json", "r", encoding="utf-8") as f:
             data = json.load(f)
             dataset = data["candidates"]
     except Exception as e:
