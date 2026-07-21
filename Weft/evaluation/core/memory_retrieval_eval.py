@@ -11,26 +11,26 @@ Implements:
 - STEP 7: Reranking candidates preparation
 """
 
+import argparse
 import json
 import sys
-import argparse
-from pathlib import Path
-from typing import List, Dict, Any, Optional, Tuple
-from datetime import datetime
 import time
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
 
 from sentence_transformers import SentenceTransformer
 from sqlalchemy import select
 
-from Weft.storage.database import SessionLocal
-from Weft.storage.models import Embedding, Chunk, Message, Conversation
 from Weft.evaluation.core.memory_metrics import (
-    MemoryRetrievalResult,
-    MemoryMetricsCalculator,
     MemoryEvaluationSummary,
-    MemoryQueryMetrics
+    MemoryMetricsCalculator,
+    MemoryQueryMetrics,
+    MemoryRetrievalResult,
 )
-
+from Weft.utils.exceptions import WeftException
+from Weft.storage.database import SessionLocal
+from Weft.storage.models import Chunk, Conversation, Embedding, Message
 
 # Model loaded at module level
 MODEL = None
@@ -102,7 +102,7 @@ def retrieve_top_50_with_metadata(query: str) -> List[MemoryRetrievalResult]:
                     else:
                         timestamp = str(ts)
                 except Exception:
-                    timestamp = str(row.create_time)
+                    raise WeftException('An error occurred', None)
             
             retrieved.append(
                 MemoryRetrievalResult(
@@ -120,7 +120,7 @@ def retrieve_top_50_with_metadata(query: str) -> List[MemoryRetrievalResult]:
         return retrieved
         
     except Exception as e:
-        print(f"[!] Retrieval error for query '{query}': {e}")
+        raise WeftException(str(e), e) from e
         return []
     finally:
         db.close()
@@ -150,7 +150,7 @@ def load_memory_queries(queries_file: str = None) -> List[Dict[str, Any]]:
         print(f"[+] Loaded {len(queries)} memory queries")
         return queries
     except Exception as e:
-        print(f"[!] Error loading queries: {e}")
+        raise WeftException(str(e), e) from e
         return []
 
 

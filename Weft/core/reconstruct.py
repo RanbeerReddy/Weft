@@ -1,12 +1,8 @@
-def reconstruct_conversation(
-    conversation
-):
+def reconstruct_conversation(conversation):
 
     mapping = conversation["mapping"]
 
-    current = conversation[
-        "current_node"
-    ]
+    current = conversation["current_node"]
 
     path = []
 
@@ -19,9 +15,7 @@ def reconstruct_conversation(
 
         path.append(node)
 
-        current = node.get(
-            "parent"
-        )
+        current = node.get("parent")
 
     path.reverse()
 

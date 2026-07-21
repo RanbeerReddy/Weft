@@ -21,20 +21,18 @@ one category:
 Generates per-query classification and aggregate statistics.
 """
 
-import json
-import sys
 import argparse
-from pathlib import Path
+import json
 from datetime import datetime
-from typing import Dict, Any, List, Optional
+from pathlib import Path
+from typing import Any, Dict, List
 
 from sentence_transformers import SentenceTransformer
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 
-from Weft.storage.database import SessionLocal
-from Weft.storage.models import Embedding, Chunk, Message, Conversation
 from Weft.evaluation.core.memory_metrics import MemoryMetricsCalculator
-
+from Weft.storage.database import SessionLocal
+from Weft.storage.models import Chunk, Conversation, Embedding, Message
 
 MODEL = None
 
@@ -49,9 +47,8 @@ def get_model() -> SentenceTransformer:
 
 def phrase_exists_in_db(db, phrase: str) -> bool:
     """Check if phrase exists anywhere in chunks table."""
-    stmt = (
-        select(func.count(Chunk.id))
-        .where(func.lower(Chunk.chunk_text).contains(phrase.lower()))
+    stmt = select(func.count(Chunk.id)).where(
+        func.lower(Chunk.chunk_text).contains(phrase.lower())
     )
     count = db.scalar(stmt)
     return count > 0
@@ -249,7 +246,9 @@ def run_failure_analysis(
             qtype = q.get("query_type", "")
             is_failed = query_text in failed_queries
 
-            print(f"\n[{i}/{len(queries)}] {'FAILED' if is_failed else 'PASSED'}: {query_text}")
+            print(
+                f"\n[{i}/{len(queries)}] {'FAILED' if is_failed else 'PASSED'}: {query_text}"
+            )
             print(f"  Expected: {expected}")
 
             classification = classify_failure(db, query_text, expected, qtype)
@@ -271,16 +270,20 @@ def run_failure_analysis(
         print("=" * 70)
         print(f"\n  Total queries analyzed: {len(queries)}")
         print(f"  Previously failed:     {len(failed_queries)}")
-        print(f"\n  Failure Categories (for previously failed queries):")
+        print("\n  Failure Categories (for previously failed queries):")
         print(f"    A — Data Missing:    {category_counts['A']}")
         print(f"    B — Embedding Miss:  {category_counts['B']}")
         print(f"    C — Ranking Issue:   {category_counts['C']}")
         print(f"    D — Eval Mismatch:   {category_counts['D']}")
 
         if category_counts["A"] > 0:
-            print(f"\n  ⚠  {category_counts['A']} failures are INVALID benchmarks "
-                  f"(data never existed)")
-            print(f"     These queries should be excluded or the data should be ingested")
+            print(
+                f"\n  ⚠  {category_counts['A']} failures are INVALID benchmarks "
+                f"(data never existed)"
+            )
+            print(
+                "     These queries should be excluded or the data should be ingested"
+            )
 
     finally:
         db.close()

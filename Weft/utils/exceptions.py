@@ -1,4 +1,5 @@
 import traceback
+
 from .logger import logger
 
 
@@ -6,8 +7,7 @@ class WeftException(Exception):
     def __init__(self, error_message, error_detail=None):
 
         self.error_message = self.get_detailed_error_message(
-            error_message,
-            error_detail
+            error_message, error_detail
         )
 
         super().__init__(self.error_message)

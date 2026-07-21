@@ -12,20 +12,18 @@ For failed retrievals where data EXISTS (Category B and C):
         - Retrieval/ranking logic (small gap → correct chunk is close but loses)
 """
 
-import json
-import sys
 import argparse
-import numpy as np
-from pathlib import Path
+import json
 from datetime import datetime
-from typing import Dict, Any, List, Optional
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
+import numpy as np
 from sentence_transformers import SentenceTransformer
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 
 from Weft.storage.database import SessionLocal
-from Weft.storage.models import Embedding, Chunk, Message, Conversation
-
+from Weft.storage.models import Chunk, Conversation, Embedding
 
 MODEL = None
 
@@ -50,15 +48,12 @@ def cosine_similarity(a: np.ndarray, b: np.ndarray) -> float:
 
 def find_correct_chunks(db, phrase: str) -> List[Dict[str, Any]]:
     """Find all chunks containing the expected phrase."""
-    stmt = (
-        select(
-            Chunk.id,
-            Chunk.conversation_id,
-            Chunk.message_id,
-            Chunk.chunk_text,
-        )
-        .where(func.lower(Chunk.chunk_text).contains(phrase.lower()))
-    )
+    stmt = select(
+        Chunk.id,
+        Chunk.conversation_id,
+        Chunk.message_id,
+        Chunk.chunk_text,
+    ).where(func.lower(Chunk.chunk_text).contains(phrase.lower()))
     results = db.execute(stmt).fetchall()
     return [
         {
@@ -73,9 +68,7 @@ def find_correct_chunks(db, phrase: str) -> List[Dict[str, Any]]:
 
 def get_chunk_embedding(db, chunk_id: int) -> Optional[List[float]]:
     """Fetch the stored embedding vector for a chunk."""
-    stmt = select(Embedding.embedding_vector).where(
-        Embedding.chunk_order == chunk_id
-    )
+    stmt = select(Embedding.embedding_vector).where(Embedding.chunk_order == chunk_id)
     result = db.execute(stmt).fetchone()
     if result and result[0] is not None:
         return list(result[0])
@@ -140,14 +133,16 @@ def analyze_embedding_for_query(
             emb_array = np.array(emb)
             sim = cosine_similarity(query_vector, emb_array)
             dist = 1.0 - sim  # cosine distance
-            correct_similarities.append({
-                "chunk_id": cc["chunk_id"],
-                "conversation_id": cc["conversation_id"],
-                "chunk_preview": cc["chunk_text"][:120],
-                "cosine_similarity": round(sim, 6),
-                "cosine_distance": round(dist, 6),
-                "embedding_norm": round(float(np.linalg.norm(emb_array)), 6),
-            })
+            correct_similarities.append(
+                {
+                    "chunk_id": cc["chunk_id"],
+                    "conversation_id": cc["conversation_id"],
+                    "chunk_preview": cc["chunk_text"][:120],
+                    "cosine_similarity": round(sim, 6),
+                    "cosine_distance": round(dist, 6),
+                    "embedding_norm": round(float(np.linalg.norm(emb_array)), 6),
+                }
+            )
 
     if not correct_similarities:
         result["status"] = "NO_EMBEDDING_FOR_CORRECT_CHUNK"
@@ -245,11 +240,13 @@ def run_embedding_analysis(
         with open(memory_queries_path, "r", encoding="utf-8") as f:
             queries = json.load(f)
         for q in queries:
-            queries_to_analyze.append({
-                "query": q["query"],
-                "expected_phrase": q["expected_phrase"],
-                "query_type": q.get("query_type"),
-            })
+            queries_to_analyze.append(
+                {
+                    "query": q["query"],
+                    "expected_phrase": q["expected_phrase"],
+                    "query_type": q.get("query_type"),
+                }
+            )
         print(f"[+] Analyzing {len(queries_to_analyze)} queries")
 
     db = SessionLocal()
@@ -288,13 +285,9 @@ def run_embedding_analysis(
             print(f"    {diag}: {count}")
 
         # Compute average gaps
-        gaps = [
-            a["distance_gap"]
-            for a in analyses
-            if "distance_gap" in a
-        ]
+        gaps = [a["distance_gap"] for a in analyses if "distance_gap" in a]
         if gaps:
-            print(f"\n  Distance gap statistics:")
+            print("\n  Distance gap statistics:")
             print(f"    Mean gap:   {sum(gaps)/len(gaps):.4f}")
             print(f"    Min gap:    {min(gaps):.4f}")
             print(f"    Max gap:    {max(gaps):.4f}")

@@ -1,59 +1,36 @@
-import sqlalchemy
-from sqlalchemy import select
+import pytest
 from sentence_transformers import SentenceTransformer
-from Weft.storage.models import Embedding, Chunk
-from Weft.storage.database import SessionLocal
+from sqlalchemy import select
 
-model = SentenceTransformer(
-    "BAAI/bge-small-en-v1.5"
-)
+from Weft.storage.models import Embedding
 
-def test_embedding_vector(query: str):
-    db = SessionLocal()
-    
-    try:
-        # 1. Generate the query vector
-        vector_embedding = model.encode(query, normalize_embeddings=True).tolist()
-        print(f"Generated embedding vector for '{query}' (Dimensions: {len(vector_embedding)})")
 
-        # 2. Define the pgvector distance attribute calculation
-        distance_attr = Embedding.embedding_vector.cosine_distance(vector_embedding)
+@pytest.mark.integration
+def test_embedding_vector_distance(db_session):
+    """
+    Test pgvector cosine distance integration.
+    This test verifies that the database successfully executes cosine_distance
+    queries using the pgvector extension.
+    """
+    model = SentenceTransformer("BAAI/bge-small-en-v1.5")
+    query = "test query"
+    vector_embedding = model.encode(query)
 
-        # 3. Build the ORM compiled statement
-        stmt = (
-            select(
-                Embedding.conversation_id,
-                Embedding.message_id,
-                Embedding.chunk_order,
-                Chunk.chunk_text,
-                distance_attr.label("distance")
-            )
-            .join(
-                Chunk,
-                Chunk.id == Embedding.chunk_order
-            )
-            .order_by("distance")
-            .limit(10)
+    # Note: If the test DB is empty, this query will just return an empty list,
+    # which is fine. We are testing that the query executes without SQL errors.
+    distance_attr = Embedding.embedding_vector.cosine_distance(vector_embedding)
+
+    stmt = (
+        select(
+            Embedding.conversation_id,
+            Embedding.message_id,
+            Embedding.chunk_order,
+            distance_attr.label("distance"),
         )
-        
-        # 4. Execute (No extra parameters dictionary needed)
-        result = db.execute(stmt).fetchall()
-        
-        print(f"\nTop {len(result)} closest embeddings from database:")
-        for row in result:
-            print(
-                f"Conversation ID: {row.conversation_id} | "
-                f"Message ID: {row.message_id} | "
-                f"Chunk Order: {row.chunk_order} | "
-                f"Chunk Text: {row.chunk_text} | "
-                f"Distance: {row.distance:.4f}" # Format distance to 4 decimal places
-            )
-            
-    except Exception as e:
-        print(f"Error executing query: {str(e)}")
-    finally:
-        db.close()
+        .order_by("distance")
+        .limit(1)
+    )
 
-
-if __name__ == "__main__":
-    test_embedding_vector("what do u think of the economic outlook for the next 5 years?")
+    result = db_session.execute(stmt).fetchall()
+    # It should not raise an exception
+    assert isinstance(result, list)

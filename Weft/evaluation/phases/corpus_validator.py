@@ -15,17 +15,16 @@ in the corpus, preventing invalid benchmark failures from being blamed
 on the retrieval system.
 """
 
-import json
-import sys
 import argparse
-from pathlib import Path
+import json
 from datetime import datetime
-from typing import Dict, Any, List, Optional
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 
 from Weft.storage.database import SessionLocal
-from Weft.storage.models import Conversation, Message, Chunk
+from Weft.storage.models import Chunk, Conversation, Message
 
 
 def search_phrase_in_chunks(db, phrase: str) -> Dict[str, Any]:
@@ -33,15 +32,12 @@ def search_phrase_in_chunks(db, phrase: str) -> Dict[str, Any]:
     pattern = f"%{phrase}%"
 
     # Find matching chunks
-    stmt = (
-        select(
-            Chunk.id,
-            Chunk.conversation_id,
-            Chunk.message_id,
-            Chunk.chunk_text,
-        )
-        .where(func.lower(Chunk.chunk_text).contains(phrase.lower()))
-    )
+    stmt = select(
+        Chunk.id,
+        Chunk.conversation_id,
+        Chunk.message_id,
+        Chunk.chunk_text,
+    ).where(func.lower(Chunk.chunk_text).contains(phrase.lower()))
     results = db.execute(stmt).fetchall()
 
     conversation_ids = set()
@@ -51,12 +47,14 @@ def search_phrase_in_chunks(db, phrase: str) -> Dict[str, Any]:
     for r in results:
         conversation_ids.add(r.conversation_id)
         message_ids.add(r.message_id)
-        chunk_previews.append({
-            "chunk_id": r.id,
-            "conversation_id": r.conversation_id,
-            "message_id": r.message_id,
-            "preview": r.chunk_text[:150] if r.chunk_text else "",
-        })
+        chunk_previews.append(
+            {
+                "chunk_id": r.id,
+                "conversation_id": r.conversation_id,
+                "message_id": r.message_id,
+                "preview": r.chunk_text[:150] if r.chunk_text else "",
+            }
+        )
 
     return {
         "exists_in_chunks": len(results) > 0,
@@ -69,15 +67,12 @@ def search_phrase_in_chunks(db, phrase: str) -> Dict[str, Any]:
 
 def search_phrase_in_messages(db, phrase: str) -> Dict[str, Any]:
     """Search for a phrase across all raw messages (case-insensitive)."""
-    stmt = (
-        select(
-            Message.id,
-            Message.conversation_id,
-            Message.role,
-            Message.content,
-        )
-        .where(func.lower(Message.content).contains(phrase.lower()))
-    )
+    stmt = select(
+        Message.id,
+        Message.conversation_id,
+        Message.role,
+        Message.content,
+    ).where(func.lower(Message.content).contains(phrase.lower()))
     results = db.execute(stmt).fetchall()
 
     conversation_ids = set()
@@ -94,12 +89,14 @@ def search_phrase_in_messages(db, phrase: str) -> Dict[str, Any]:
         end = min(len(r.content), idx + len(phrase) + 50)
         context = r.content[start:end]
 
-        message_previews.append({
-            "message_id": r.id,
-            "conversation_id": r.conversation_id,
-            "role": r.role,
-            "context": f"...{context}...",
-        })
+        message_previews.append(
+            {
+                "message_id": r.id,
+                "conversation_id": r.conversation_id,
+                "role": r.role,
+                "context": f"...{context}...",
+            }
+        )
 
     return {
         "exists_in_messages": len(results) > 0,
@@ -190,9 +187,9 @@ def validate_benchmark_phrases(
         if status == "VALID":
             print(f"    ✓ Found in {chunk_result['chunk_count']} chunks")
         elif status == "LOST_IN_CHUNKING":
-            print(f"    ⚠ In messages but LOST during chunking!")
+            print("    ⚠ In messages but LOST during chunking!")
         else:
-            print(f"    ✗ NOT FOUND anywhere in database")
+            print("    ✗ NOT FOUND anywhere in database")
 
     return {
         "total_phrases": len(results),
@@ -217,9 +214,7 @@ def run_validation(
 
     # Load memory queries
     if memory_queries_path is None:
-        memory_queries_path = str(
-            Path(__file__).parent / "memory_queries.json"
-        )
+        memory_queries_path = str(Path(__file__).parent / "memory_queries.json")
 
     memory_queries = []
     mq_path = Path(memory_queries_path)
@@ -247,14 +242,14 @@ def run_validation(
     try:
         # Validate memory queries (phrase-based)
         if memory_queries:
-            print(f"\n--- Validating Memory Queries (phrase-based) ---")
+            print("\n--- Validating Memory Queries (phrase-based) ---")
             report["memory_queries"] = validate_benchmark_phrases(
                 db, memory_queries, phrase_key="expected_phrase"
             )
 
         # Validate test queries (keyword-based)
         if test_queries:
-            print(f"\n--- Validating Test Queries (keyword-based) ---")
+            print("\n--- Validating Test Queries (keyword-based) ---")
             # For keyword-based queries, check each keyword
             keyword_results = []
             for tq in test_queries:
@@ -286,14 +281,14 @@ def run_validation(
 
         if "memory_queries" in report:
             mq = report["memory_queries"]
-            print(f"\n  Memory Queries:")
+            print("\n  Memory Queries:")
             print(f"    Total phrases:     {mq['total_phrases']}")
             print(f"    Valid (in chunks): {mq['valid']}")
             print(f"    Lost in chunking: {mq['lost_in_chunking']}")
             print(f"    Data missing:     {mq['data_missing']}")
 
             if mq["invalid"] > 0:
-                print(f"\n  Invalid Benchmark Queries:")
+                print("\n  Invalid Benchmark Queries:")
                 for p in mq["per_phrase"]:
                     if p["status"] != "VALID":
                         print(f"    ✗ '{p['phrase']}' — {p['status']}")
@@ -301,7 +296,7 @@ def run_validation(
 
         if "test_queries_keywords" in report:
             tq = report["test_queries_keywords"]
-            print(f"\n  Test Query Keywords:")
+            print("\n  Test Query Keywords:")
             print(f"    Total keywords:    {tq['total_phrases']}")
             print(f"    Valid (in chunks): {tq['valid']}")
             print(f"    Missing:          {tq['data_missing']}")

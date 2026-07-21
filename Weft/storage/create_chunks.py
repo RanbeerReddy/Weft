@@ -1,24 +1,12 @@
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from sqlalchemy import select
+
+from Weft.storage.database import SessionLocal
+from Weft.storage.models import Chunk, Message
 from Weft.utils.exceptions import WeftException
 
-from langchain_text_splitters import (
-    RecursiveCharacterTextSplitter
-)
-
-from Weft.storage.database import (
-    SessionLocal
-)
-
-from Weft.storage.models import (
-    Message,
-    Chunk
-)
-
-
 splitter = RecursiveCharacterTextSplitter(
-    chunk_size=1000,
-    chunk_overlap=150,
-    length_function=len
+    chunk_size=1000, chunk_overlap=150, length_function=len
 )
 
 
@@ -36,13 +24,9 @@ def build_chunks():
 
     try:
 
-        messages = db.scalars(
-            select(Message)
-        ).all()
+        messages = db.scalars(select(Message)).all()
 
-        print(
-            f"Found {len(messages)} messages"
-        )
+        print(f"Found {len(messages)} messages")
 
         total_chunks = 0
 
@@ -51,25 +35,16 @@ def build_chunks():
             if not message.content:
                 continue
 
-            chunks = split_text(
-                message.content
-            )
+            chunks = split_text(message.content)
 
-            for idx, chunk_text in enumerate(
-                chunks
-            ):
+            for idx, chunk_text in enumerate(chunks):
 
                 db.add(
                     Chunk(
-                        conversation_id=
-                            message.conversation_id,
-
-                        message_id=
-                            message.id,
-
+                        conversation_id=message.conversation_id,
+                        message_id=message.id,
                         chunk_order=idx,
-
-                        chunk_text=chunk_text
+                        chunk_text=chunk_text,
                     )
                 )
 
@@ -77,11 +52,9 @@ def build_chunks():
 
         db.commit()
 
-        print(
-            f"Created {total_chunks} chunks"
-        )
+        print(f"Created {total_chunks} chunks")
 
-    except WeftException as e:
+    except WeftException:
 
         db.close()
 

@@ -13,21 +13,18 @@ This dataset will later be used to evaluate multiple rerankers
 (e.g., cross-encoder/ms-marco-MiniLM-L-6-v2, BAAI/bge-reranker-base).
 """
 
-import json
-import sys
 import argparse
-import time
-from pathlib import Path
+import json
 from datetime import datetime
-from typing import Dict, Any, List, Optional
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 from sentence_transformers import SentenceTransformer
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 
-from Weft.storage.database import SessionLocal
-from Weft.storage.models import Embedding, Chunk, Message, Conversation
 from Weft.evaluation.core.memory_metrics import MemoryMetricsCalculator
-
+from Weft.storage.database import SessionLocal
+from Weft.storage.models import Chunk, Conversation, Embedding, Message
 
 MODEL = None
 
@@ -125,9 +122,13 @@ def run_reranking_preparation(
 
     # Load queries
     if memory_queries_path is None:
-        memory_queries_path = str(Path(__file__).parent.parent / "data" / "memory_queries.json")
+        memory_queries_path = str(
+            Path(__file__).parent.parent / "data" / "memory_queries.json"
+        )
 
-    with open("Weft/evaluation/reports/search_experiments_report.json", "r", encoding="utf-8") as f:
+    with open(
+        "Weft/evaluation/reports/search_experiments_report.json", "r", encoding="utf-8"
+    ) as f:
         queries = json.load(f)
     print(f"[+] Loaded {len(queries)} benchmark queries")
 
@@ -192,19 +193,23 @@ def run_reranking_preparation(
                 "correct_chunk_rank": correct_rank,
                 "correct_chunk_distance": correct_distance,
                 "top_1_distance": top_100[0]["distance"] if top_100 else None,
-                "distance_gap": round(
-                    correct_distance - top_100[0]["distance"], 6
-                ) if correct_distance and top_100 else None,
+                "distance_gap": (
+                    round(correct_distance - top_100[0]["distance"], 6)
+                    if correct_distance and top_100
+                    else None
+                ),
                 "top_100_candidates": top_100,
             }
             candidates.append(candidate)
 
             if correct_rank:
-                print(f"  Correct chunk at rank {correct_rank} (dist={correct_distance:.4f})")
+                print(
+                    f"  Correct chunk at rank {correct_rank} (dist={correct_distance:.4f})"
+                )
             elif correct:
-                print(f"  Correct chunk exists but NOT in top-100")
+                print("  Correct chunk exists but NOT in top-100")
             else:
-                print(f"  No correct chunk found in DB")
+                print("  No correct chunk found in DB")
 
         report["candidates"] = candidates
         report["statistics"] = stats
@@ -224,8 +229,10 @@ def run_reranking_preparation(
             reranking_potential = (
                 stats["correct_in_top_100"] - stats["correct_in_top_10"]
             )
-            print(f"\n  Reranking potential: {reranking_potential} queries could improve")
-            print(f"  (chunks in top-100 but not top-10 → reranker could promote them)")
+            print(
+                f"\n  Reranking potential: {reranking_potential} queries could improve"
+            )
+            print("  (chunks in top-100 but not top-10 → reranker could promote them)")
 
     finally:
         db.close()

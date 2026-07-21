@@ -1,0 +1,40 @@
+[tool.poetry]
+name = "weft"
+version = "0.1.0"
+description = "Turning ChatGPT conversations into a searchable, structured second brain."
+authors = ["Ranbeer Reddy <you@example.com>"]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra -q --cov=Weft --cov-report=term-missing"
+testpaths = ["tests"]
+markers = [
+    "unit: mark a test as a unit test (isolated)",
+    "integration: mark a test as an integration test (requires db)",
+]
+
+[tool.black]
+line-length = 88
+target-version = ['py311']
+
+[tool.isort]
+profile = "black"
+line_length = 88
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "C90"]
+ignore = []
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true

@@ -1,10 +1,10 @@
-import json
 
-from Weft.utils.zipextracter import extract_zip
 from Weft.utils.exceptions import WeftException
+from Weft.utils.zipextracter import extract_zip
 
 zip_path = "Data/Raw Data/reddyranbeer openAI Data.zip"
-extract_to = "Data/Extracted Data/" 
+extract_to = "Data/Extracted Data/"
+
 
 def extract_data_from_zip(zip_path, extract_to):
     try:

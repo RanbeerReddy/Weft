@@ -1,42 +1,52 @@
 import json
-import uuid
 import re
+import uuid
 from datetime import datetime
+
+from sqlalchemy import String, select
+
 from Weft.storage.database import SessionLocal
-from Weft.storage.models import Message, Memory, MemoryEvidence, MemoryType
-from sqlalchemy import select, String
+from Weft.storage.models import Memory, MemoryEvidence, MemoryType, Message
+from Weft.utils.exceptions import WeftException
+
 
 # Dummy deterministic rule-based extractor
 def deterministic_extract(message_content):
     memories = []
     text = message_content.lower()
-    
+
     # Example rules from the prompt/design
     if "i am preparing for" in text or "my goal is" in text:
-        match = re.search(r'(?:i am preparing for|my goal is)\s+(.*)', text)
+        match = re.search(r"(?:i am preparing for|my goal is)\s+(.*)", text)
         if match:
-            memories.append({
-                "type_name": "Goal",
-                "value": {"target": match.group(1).strip()},
-                "confidence": 0.9,
-                "reasoning": "Matched deterministic goal regex."
-            })
-            
+            memories.append(
+                {
+                    "type_name": "Goal",
+                    "value": {"target": match.group(1).strip()},
+                    "confidence": 0.9,
+                    "reasoning": "Matched deterministic goal regex.",
+                }
+            )
+
     if "i got selected for" in text:
-        match = re.search(r'i got selected for\s+(.*)', text)
+        match = re.search(r"i got selected for\s+(.*)", text)
         if match:
-            memories.append({
-                "type_name": "Experience",
-                "value": {"event": match.group(1).strip()},
-                "confidence": 0.85,
-                "reasoning": "Matched deterministic experience regex."
-            })
-            
+            memories.append(
+                {
+                    "type_name": "Experience",
+                    "value": {"event": match.group(1).strip()},
+                    "confidence": 0.85,
+                    "reasoning": "Matched deterministic experience regex.",
+                }
+            )
+
     return memories
+
 
 def mock_llm_extract(message_content):
     # Stub for future LLM integration
     return []
+
 
 def extract_memories():
     print("Connecting to database...")
@@ -48,7 +58,9 @@ def extract_memories():
         for t_name in types:
             t = db.scalars(select(MemoryType).where(MemoryType.name == t_name)).first()
             if not t:
-                t = MemoryType(id=str(uuid.uuid4()), name=t_name, description=f"Extracted {t_name}")
+                t = MemoryType(
+                    id=str(uuid.uuid4()), name=t_name, description=f"Extracted {t_name}"
+                )
                 db.add(t)
             type_map[t_name] = t
         db.commit()
@@ -56,22 +68,22 @@ def extract_memories():
         print("Fetching messages from database...")
         messages = db.scalars(select(Message)).all()
         print(f"Found {len(messages)} messages to process.")
-        
+
         extracted_count = 0
         for i, msg in enumerate(messages, 1):
             if not msg.content:
                 continue
-            
+
             # 1. Deterministic
             extracted = deterministic_extract(msg.content)
             # 2. LLM (mock)
             extracted.extend(mock_llm_extract(msg.content))
-            
+
             for ext in extracted:
                 type_obj = type_map.get(ext["type_name"])
                 if not type_obj:
                     continue
-                
+
                 # Simple deduplication check based on stringified value
                 val_str = json.dumps(ext["value"])
                 # Note: this is a naive dedup for phase 2.
@@ -79,7 +91,7 @@ def extract_memories():
                 existing_mem = db.scalars(
                     select(Memory).where(Memory.value.cast(String) == val_str)
                 ).first()
-                
+
                 if existing_mem:
                     # Update evidence for existing memory
                     evidence = MemoryEvidence(
@@ -88,7 +100,7 @@ def extract_memories():
                         message_id=msg.id,
                         extracted_at=datetime.utcnow(),
                         confidence_score=ext["confidence"],
-                        reasoning=ext["reasoning"] + " (Deduplicated)"
+                        reasoning=ext["reasoning"] + " (Deduplicated)",
                     )
                     db.add(evidence)
                 else:
@@ -100,30 +112,31 @@ def extract_memories():
                         value=ext["value"],
                         status="active",
                         create_time=datetime.utcnow(),
-                        update_time=datetime.utcnow()
+                        update_time=datetime.utcnow(),
                     )
-                    
+
                     evidence = MemoryEvidence(
                         id=str(uuid.uuid4()),
                         memory_id=mem_id,
                         message_id=msg.id,
                         extracted_at=datetime.utcnow(),
                         confidence_score=ext["confidence"],
-                        reasoning=ext["reasoning"]
+                        reasoning=ext["reasoning"],
                     )
-                    
+
                     db.add(memory)
                     db.add(evidence)
-                
+
                 extracted_count += 1
-                
+
         db.commit()
         print(f"\nSuccessfully extracted {extracted_count} memories.")
     except Exception as e:
-        db.rollback()
+        raise WeftException(str(e), e) from e
         print(f"[ERROR] Extraction failed: {str(e)}")
     finally:
         db.close()
+
 
 if __name__ == "__main__":
     extract_memories()

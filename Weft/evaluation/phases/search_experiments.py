@@ -13,25 +13,28 @@ metrics for side-by-side comparison.
 NO changes are kept to production code unless benchmark improves.
 """
 
+import argparse
 import json
 import sys
-import argparse
 import time
-from pathlib import Path
 from datetime import datetime
-from typing import Dict, Any, List, Optional, Tuple
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
 
 from sentence_transformers import SentenceTransformer
-from sqlalchemy import select, func, text, cast, String
+from sqlalchemy import String, cast, func, select, text
 
-from Weft.storage.database import SessionLocal
-from Weft.storage.models import Embedding, Chunk, Message, Conversation
 from Weft.evaluation.core.memory_metrics import (
     MemoryMetricsCalculator,
-    MemoryRetrievalResult,
     MemoryQueryMetrics,
+    MemoryRetrievalResult,
+    Weft.utils.exceptions,
+    WeftException,
+    from,
+    import,
 )
-
+from Weft.storage.database import SessionLocal
+from Weft.storage.models import Chunk, Conversation, Embedding, Message
 
 MODEL = None
 
@@ -366,7 +369,7 @@ def run_experiments(
                 )
                 experiments.append(exp)
             except Exception as e:
-                print(f"    [!] Hybrid search failed: {e}")
+                raise WeftException(str(e), e) from e
                 experiments.append({
                     "experiment": f"Exp3: Hybrid (alpha={alpha})",
                     "error": str(e),

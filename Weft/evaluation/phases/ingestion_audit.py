@@ -15,17 +15,16 @@ Detects:
     - Orphaned embeddings
 """
 
-import json
-import sys
 import argparse
-from pathlib import Path
+import json
 from datetime import datetime
-from typing import Dict, Any, List, Set
+from pathlib import Path
+from typing import Any, Dict, List, Set
 
-from sqlalchemy import select, func, text
+from sqlalchemy import func, select, text
 
 from Weft.storage.database import SessionLocal
-from Weft.storage.models import Conversation, Message, Chunk, Embedding
+from Weft.storage.models import Chunk, Conversation, Embedding, Message
 
 
 def count_json_conversations(json_path: str) -> Dict[str, Any]:
@@ -306,10 +305,14 @@ def run_audit(json_path: str = "conversations.json") -> Dict[str, Any]:
 
         json_total = json_stats.get("total_conversations", "?")
         db_total = db_counts["conversations"]
-        print(f"\n  Pipeline Completeness:")
+        print("\n  Pipeline Completeness:")
         print(f"    JSON → DB Conversations: {json_total} → {db_total}")
-        print(f"    DB Messages → Chunks:    {db_counts['messages']} → {db_counts['chunks']}")
-        print(f"    DB Chunks → Embeddings:  {db_counts['chunks']} → {db_counts['embeddings']}")
+        print(
+            f"    DB Messages → Chunks:    {db_counts['messages']} → {db_counts['chunks']}"
+        )
+        print(
+            f"    DB Chunks → Embeddings:  {db_counts['chunks']} → {db_counts['embeddings']}"
+        )
 
         if db_counts["chunks"] > 0:
             embed_rate = db_counts["embeddings"] / db_counts["chunks"] * 100

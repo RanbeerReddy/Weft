@@ -13,21 +13,19 @@ For every failed retrieval where data exists:
         - Context isolation
 """
 
-import json
-import sys
 import argparse
-from pathlib import Path
+import json
 from datetime import datetime
-from typing import Dict, Any, List, Optional
-
-from sqlalchemy import select, func
-
-from Weft.storage.database import SessionLocal
-from Weft.storage.models import Message, Chunk, Conversation
-from Weft.evaluation.core.memory_metrics import MemoryMetricsCalculator
+from pathlib import Path
+from typing import Any, Dict, List
 
 # Import the splitter to simulate chunk generation
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from sqlalchemy import func, select
+
+from Weft.evaluation.core.memory_metrics import MemoryMetricsCalculator
+from Weft.storage.database import SessionLocal
+from Weft.storage.models import Chunk, Conversation, Message
 
 # Same splitter config as production
 SPLITTER = RecursiveCharacterTextSplitter(
@@ -141,12 +139,14 @@ def analyze_chunking_for_phrase(
         sim_split = False
         for idx, sc in enumerate(simulated_chunks):
             contains = MemoryMetricsCalculator.phrase_in_text(phrase, sc)
-            sim_containing.append({
-                "chunk_index": idx,
-                "contains_phrase": contains,
-                "length": len(sc),
-                "preview": sc[:100],
-            })
+            sim_containing.append(
+                {
+                    "chunk_index": idx,
+                    "contains_phrase": contains,
+                    "length": len(sc),
+                    "preview": sc[:100],
+                }
+            )
 
         phrase_in_any_sim = any(s["contains_phrase"] for s in sim_containing)
 
@@ -164,16 +164,16 @@ def analyze_chunking_for_phrase(
 
         stored_containing = []
         for sc in stored_chunks:
-            contains = MemoryMetricsCalculator.phrase_in_text(
-                phrase, sc["chunk_text"]
+            contains = MemoryMetricsCalculator.phrase_in_text(phrase, sc["chunk_text"])
+            stored_containing.append(
+                {
+                    "chunk_id": sc["chunk_id"],
+                    "chunk_order": sc["chunk_order"],
+                    "contains_phrase": contains,
+                    "length": sc["length"],
+                    "preview": sc["chunk_text"][:100],
+                }
             )
-            stored_containing.append({
-                "chunk_id": sc["chunk_id"],
-                "chunk_order": sc["chunk_order"],
-                "contains_phrase": contains,
-                "length": sc["length"],
-                "preview": sc["chunk_text"][:100],
-            })
 
         phrase_in_stored = any(s["contains_phrase"] for s in stored_containing)
         msg_analysis["stored_chunks"] = stored_containing
@@ -188,7 +188,11 @@ def analyze_chunking_for_phrase(
         if not phrase_in_stored and phrase_in_any_sim:
             issues.append("PHRASE_IN_SIMULATED_BUT_NOT_STORED")
 
-        if not phrase_in_stored and not phrase_in_any_sim and phrase.lower() in content.lower():
+        if (
+            not phrase_in_stored
+            and not phrase_in_any_sim
+            and phrase.lower() in content.lower()
+        ):
             issues.append("PHRASE_IN_MESSAGE_BUT_NOT_ANY_CHUNK")
 
         if len(stored_chunks) == 0 and content.strip():
@@ -197,11 +201,15 @@ def analyze_chunking_for_phrase(
         # Check for very short chunks (< 50 chars) that lack context
         short_chunks = [s for s in stored_containing if s["length"] < 50]
         if short_chunks:
-            issues.append(f"SHORT_CHUNKS_LACKING_CONTEXT ({len(short_chunks)} chunks < 50 chars)")
+            issues.append(
+                f"SHORT_CHUNKS_LACKING_CONTEXT ({len(short_chunks)} chunks < 50 chars)"
+            )
 
         # Check if message is so long it produces many chunks
         if len(stored_chunks) > 10:
-            issues.append(f"CHUNK_EXPLOSION ({len(stored_chunks)} chunks from one message)")
+            issues.append(
+                f"CHUNK_EXPLOSION ({len(stored_chunks)} chunks from one message)"
+            )
 
         # Check if there are no stored chunks but simulated chunks exist
         if len(stored_chunks) != len(simulated_chunks):
@@ -257,12 +265,14 @@ def run_chunk_analysis(
         with open(memory_queries_path, "r", encoding="utf-8") as f:
             queries = json.load(f)
         for q in queries:
-            queries_to_analyze.append({
-                "query": q["query"],
-                "expected_phrase": q["expected_phrase"],
-                "query_type": q.get("query_type"),
-                "category": "UNKNOWN",
-            })
+            queries_to_analyze.append(
+                {
+                    "query": q["query"],
+                    "expected_phrase": q["expected_phrase"],
+                    "query_type": q.get("query_type"),
+                    "category": "UNKNOWN",
+                }
+            )
 
     db = SessionLocal()
     try:
@@ -290,7 +300,7 @@ def run_chunk_analysis(
                 for issue in analysis["unique_issues"]:
                     print(f"  ⚠ {issue}")
             elif analysis["status"] == "ANALYZED":
-                print(f"  ✓ No chunking issues detected")
+                print("  ✓ No chunking issues detected")
 
         report["analyses"] = analyses
         report["issue_summary"] = issue_summary
@@ -314,18 +324,18 @@ def run_chunk_analysis(
         print("CHUNK ANALYSIS SUMMARY")
         print("=" * 70)
         print(f"\n  Total queries analyzed: {len(analyses)}")
-        print(f"\n  Chunk Statistics:")
+        print("\n  Chunk Statistics:")
         print(f"    Total chunks:     {total_chunks}")
         print(f"    Avg chunk length: {report['chunk_statistics']['avg_chunk_length']}")
         print(f"    Min chunk length: {min_length}")
         print(f"    Max chunk length: {max_length}")
 
         if issue_summary:
-            print(f"\n  Chunking Issues Found:")
+            print("\n  Chunking Issues Found:")
             for issue, count in sorted(issue_summary.items(), key=lambda x: -x[1]):
                 print(f"    {issue}: {count}")
         else:
-            print(f"\n  ✓ No chunking issues detected")
+            print("\n  ✓ No chunking issues detected")
 
     finally:
         db.close()

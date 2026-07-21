@@ -1,9 +1,12 @@
 from __future__ import annotations
+
 import json
 import re
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 from typing import Any
+
+from Weft.utils.exceptions import WeftException
 
 # =========================================================
 # CONFIG
@@ -35,7 +38,7 @@ def unix_to_iso(ts: float | None) -> str:
     try:
         return datetime.fromtimestamp(ts).isoformat()
     except Exception:
-        return "unknown"
+        raise WeftException("An error occurred", None)
 
 
 def extract_message_text(message: dict[str, Any]) -> str:
@@ -87,14 +90,16 @@ def reconstruct_conversation(conversation: dict[str, Any]) -> None:
         text = extract_message_text(message)
         if not text.strip():
             continue
-        parsed_messages.append({
-            "id": node_id,
-            "role": get_author_role(message),
-            "text": text,
-            "create_time": unix_to_iso(message.get("create_time")),
-            "parent": node_data.get("parent"),
-            "children": node_data.get("children", []),
-        })
+        parsed_messages.append(
+            {
+                "id": node_id,
+                "role": get_author_role(message),
+                "text": text,
+                "create_time": unix_to_iso(message.get("create_time")),
+                "parent": node_data.get("parent"),
+                "children": node_data.get("children", []),
+            }
+        )
     parsed_messages.sort(key=lambda x: x["create_time"])
 
     # Individual message files
@@ -103,10 +108,18 @@ def reconstruct_conversation(conversation: dict[str, Any]) -> None:
             filename = f"{idx:04d}_{msg['role']}.md"
             file_path = messages_dir / filename
 
-            parent_link = f"[[{msg['parent']}]]" if msg['parent'] else "None"
-            children_links = ", ".join([f"[[{child}]]" for child in msg['children']]) if msg['children'] else "None"
+            parent_link = f"[[{msg['parent']}]]" if msg["parent"] else "None"
+            children_links = (
+                ", ".join([f"[[{child}]]" for child in msg["children"]])
+                if msg["children"]
+                else "None"
+            )
             prev_link = f"[[{parsed_messages[idx-2]['id']}]]" if idx > 1 else "None"
-            next_link = f"[[{parsed_messages[idx]['id']}]]" if idx < len(parsed_messages) else "None"
+            next_link = (
+                f"[[{parsed_messages[idx]['id']}]]"
+                if idx < len(parsed_messages)
+                else "None"
+            )
 
             content = f"""# {msg['role'].upper()}
 
@@ -141,18 +154,20 @@ def reconstruct_conversation(conversation: dict[str, Any]) -> None:
         ]
         for idx, msg in enumerate(parsed_messages, start=1):
             filename = f"{idx:04d}_{msg['role']}.md"
-            conversation_md.extend([
-                f"## {msg['role'].upper()}",
-                "",
-                f"**Time:** {msg['create_time']}",
-                "",
-                f"[[{filename}]]",  # link to message file
-                "",
-                msg["text"],
-                "",
-                "---",
-                "",
-            ])
+            conversation_md.extend(
+                [
+                    f"## {msg['role'].upper()}",
+                    "",
+                    f"**Time:** {msg['create_time']}",
+                    "",
+                    f"[[{filename}]]",  # link to message file
+                    "",
+                    msg["text"],
+                    "",
+                    "---",
+                    "",
+                ]
+            )
         with open(conversation_dir / "conversation.md", "w", encoding="utf-8") as f:
             f.write("\n".join(conversation_md))
 
@@ -185,9 +200,11 @@ def main() -> None:
     for idx, conversation in enumerate(all_conversations, start=1):
         try:
             reconstruct_conversation(conversation)
-            print(f"[{idx}/{len(all_conversations)}] Processed: {conversation.get('title', 'untitled')}")
+            print(
+                f"[{idx}/{len(all_conversations)}] Processed: {conversation.get('title', 'untitled')}"
+            )
         except Exception as e:
-            print(f"[!] Failed conversation {conversation.get('id')} -> {e}")
+            raise WeftException(str(e), e) from e
 
     print("\n[+] Reconstruction complete")
 

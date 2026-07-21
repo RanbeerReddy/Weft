@@ -1,7 +1,7 @@
 import logging
 import os
-from logging.handlers import RotatingFileHandler
 from datetime import datetime
+from logging.handlers import RotatingFileHandler
 
 # =========================
 # LOG DIRECTORY
@@ -10,10 +10,7 @@ from datetime import datetime
 LOG_DIR = "logs"
 os.makedirs(LOG_DIR, exist_ok=True)
 
-LOG_FILE = os.path.join(
-    LOG_DIR,
-    f"{datetime.now().strftime('%Y-%m-%d')}.log"
-)
+LOG_FILE = os.path.join(LOG_DIR, f"{datetime.now().strftime('%Y-%m-%d')}.log")
 
 # =========================
 # LOGGER CONFIGURATION
@@ -35,10 +32,7 @@ formatter = logging.Formatter(LOG_FORMAT)
 # =========================
 
 file_handler = RotatingFileHandler(
-    LOG_FILE,
-    maxBytes=5 * 1024 * 1024,  # 5MB
-    backupCount=5,
-    encoding="utf-8"
+    LOG_FILE, maxBytes=5 * 1024 * 1024, backupCount=5, encoding="utf-8"  # 5MB
 )
 
 file_handler.setFormatter(formatter)

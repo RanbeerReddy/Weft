@@ -15,3 +15,10 @@ Weft/evaluation/data/reranking_dataset.json
 Weft/evaluation/reports/*_report.md
 Weft/evaluation/reports/final_report.md
 hybrid_benchmark_results.json
+
+# Testing and Code Quality
+.coverage
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+scratch_*.py
