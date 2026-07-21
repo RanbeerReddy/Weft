@@ -28,11 +28,8 @@ from Weft.evaluation.core.memory_metrics import (
     MemoryMetricsCalculator,
     MemoryQueryMetrics,
     MemoryRetrievalResult,
-    Weft.utils.exceptions,
-    WeftException,
-    from,
-    import,
 )
+from Weft.utils.exceptions import WeftException
 from Weft.storage.database import SessionLocal
 from Weft.storage.models import Chunk, Conversation, Embedding, Message
 
@@ -87,7 +84,9 @@ def vector_search(db, query: str, k: int = 10) -> List[MemoryRetrievalResult]:
     ]
 
 
-def hybrid_search(db, query: str, k: int = 10, alpha: float = 0.5) -> List[MemoryRetrievalResult]:
+def hybrid_search(
+    db, query: str, k: int = 10, alpha: float = 0.5
+) -> List[MemoryRetrievalResult]:
     """Hybrid search: vector score + BM25 (tsvector) score fusion.
 
     Uses Reciprocal Rank Fusion (RRF) to combine vector and text search results.
@@ -126,7 +125,8 @@ def hybrid_search(db, query: str, k: int = 10, alpha: float = 0.5) -> List[Memor
 
     # Get text search results using PostgreSQL full-text search
     # Use plainto_tsquery for simple query parsing
-    ts_stmt = text("""
+    ts_stmt = text(
+        """
         SELECT c.conversation_id, c.message_id, c.id as chunk_id,
                c.chunk_text,
                ts_rank(to_tsvector('english', c.chunk_text),
@@ -138,7 +138,8 @@ def hybrid_search(db, query: str, k: int = 10, alpha: float = 0.5) -> List[Memor
         WHERE to_tsvector('english', c.chunk_text) @@ plainto_tsquery('english', :query)
         ORDER BY text_score DESC
         LIMIT :limit
-    """)
+    """
+    )
     text_results = db.execute(ts_stmt, {"query": query, "limit": k * 3}).fetchall()
 
     # Reciprocal Rank Fusion
@@ -180,7 +181,9 @@ def hybrid_search(db, query: str, k: int = 10, alpha: float = 0.5) -> List[Memor
             rrf_scores[chunk_id]["score"] += score
 
     # Sort by RRF score and take top-k
-    sorted_results = sorted(rrf_scores.values(), key=lambda x: x["score"], reverse=True)[:k]
+    sorted_results = sorted(
+        rrf_scores.values(), key=lambda x: x["score"], reverse=True
+    )[:k]
 
     return [
         MemoryRetrievalResult(
@@ -292,14 +295,16 @@ def evaluate_experiment(
             hits_at[10] += 1
         total_mrr += metrics.phrase_mrr
 
-        per_query.append({
-            "query": query_text,
-            "expected_phrase": expected,
-            "phrase_rank": metrics.phrase_rank,
-            "phrase_mrr": metrics.phrase_mrr,
-            "hit_at_1": metrics.memory_hit_at_1,
-            "hit_at_10": metrics.memory_hit_at_10,
-        })
+        per_query.append(
+            {
+                "query": query_text,
+                "expected_phrase": expected,
+                "phrase_rank": metrics.phrase_rank,
+                "phrase_mrr": metrics.phrase_mrr,
+                "hit_at_1": metrics.memory_hit_at_1,
+                "hit_at_10": metrics.memory_hit_at_10,
+            }
+        )
 
     elapsed = time.time() - t0
     n = len(queries)
@@ -316,10 +321,12 @@ def evaluate_experiment(
         "per_query": per_query,
     }
 
-    print(f"    Hit@1={result['hit_at_1_rate']:.1%}  "
-          f"Hit@10={result['hit_at_10_rate']:.1%}  "
-          f"MRR={result['mrr']:.4f}  "
-          f"({elapsed:.1f}s)")
+    print(
+        f"    Hit@1={result['hit_at_1_rate']:.1%}  "
+        f"Hit@10={result['hit_at_10_rate']:.1%}  "
+        f"MRR={result['mrr']:.4f}  "
+        f"({elapsed:.1f}s)"
+    )
 
     return result
 
@@ -363,23 +370,31 @@ def run_experiments(
         for alpha in [0.7, 0.5, 0.3]:
             try:
                 exp = evaluate_experiment(
-                    queries, hybrid_search,
-                    f"Exp3: Hybrid (alpha={alpha})", db,
-                    k=10, alpha=alpha,
+                    queries,
+                    hybrid_search,
+                    f"Exp3: Hybrid (alpha={alpha})",
+                    db,
+                    k=10,
+                    alpha=alpha,
                 )
                 experiments.append(exp)
             except Exception as e:
                 raise WeftException(str(e), e) from e
-                experiments.append({
-                    "experiment": f"Exp3: Hybrid (alpha={alpha})",
-                    "error": str(e),
-                })
+                experiments.append(
+                    {
+                        "experiment": f"Exp3: Hybrid (alpha={alpha})",
+                        "error": str(e),
+                    }
+                )
 
         # Experiment 4: Metadata filtering (user messages only)
         exp4 = evaluate_experiment(
-            queries, metadata_filtered_search,
-            "Exp4: Vector + User-only filter", db,
-            k=10, role_filter="user",
+            queries,
+            metadata_filtered_search,
+            "Exp4: Vector + User-only filter",
+            db,
+            k=10,
+            role_filter="user",
         )
         experiments.append(exp4)
 
@@ -389,7 +404,9 @@ def run_experiments(
         print("\n" + "=" * 70)
         print("EXPERIMENT COMPARISON")
         print("=" * 70)
-        print(f"\n  {'Experiment':<40} {'Hit@1':>6} {'Hit@3':>6} {'Hit@5':>6} {'Hit@10':>7} {'MRR':>7}")
+        print(
+            f"\n  {'Experiment':<40} {'Hit@1':>6} {'Hit@3':>6} {'Hit@5':>6} {'Hit@10':>7} {'MRR':>7}"
+        )
         print("  " + "-" * 68)
 
         baseline_mrr = None
@@ -399,7 +416,11 @@ def run_experiments(
                 continue
             if baseline_mrr is None:
                 baseline_mrr = exp["mrr"]
-            delta = f" ({exp['mrr'] - baseline_mrr:+.4f})" if baseline_mrr and exp != experiments[0] else ""
+            delta = (
+                f" ({exp['mrr'] - baseline_mrr:+.4f})"
+                if baseline_mrr and exp != experiments[0]
+                else ""
+            )
             print(
                 f"  {exp['experiment']:<40} "
                 f"{exp['hit_at_1_rate']:>5.1%} "

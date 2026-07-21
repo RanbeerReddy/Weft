@@ -1,4 +1,3 @@
-
 from Weft.utils.exceptions import WeftException
 from Weft.utils.zipextracter import extract_zip
 

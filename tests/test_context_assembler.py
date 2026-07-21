@@ -10,22 +10,40 @@ from Weft.storage.models import Memory, MemoryType
 def seeded_db(db_session):
     import uuid
     from sqlalchemy import select
-    
+
     # Seed some memory types and memories for the test
-    pref_type = db_session.scalars(select(MemoryType).where(MemoryType.name == "Preference")).first()
+    pref_type = db_session.scalars(
+        select(MemoryType).where(MemoryType.name == "Preference")
+    ).first()
     if not pref_type:
-        pref_type = MemoryType(id=str(uuid.uuid4()), name="Preference", description="User preferences")
+        pref_type = MemoryType(
+            id=str(uuid.uuid4()), name="Preference", description="User preferences"
+        )
         db_session.add(pref_type)
-        
-    goal_type = db_session.scalars(select(MemoryType).where(MemoryType.name == "Goal")).first()
+
+    goal_type = db_session.scalars(
+        select(MemoryType).where(MemoryType.name == "Goal")
+    ).first()
     if not goal_type:
-        goal_type = MemoryType(id=str(uuid.uuid4()), name="Goal", description="User goals")
+        goal_type = MemoryType(
+            id=str(uuid.uuid4()), name="Goal", description="User goals"
+        )
         db_session.add(goal_type)
-        
+
     db_session.commit()
 
-    mem1 = Memory(id=str(uuid.uuid4()), type_id=pref_type.id, value={"target": "Prefers concise answers"}, status="active")
-    mem2 = Memory(id=str(uuid.uuid4()), type_id=goal_type.id, value={"target": "Learn rust programming"}, status="active")
+    mem1 = Memory(
+        id=str(uuid.uuid4()),
+        type_id=pref_type.id,
+        value={"target": "Prefers concise answers"},
+        status="active",
+    )
+    mem2 = Memory(
+        id=str(uuid.uuid4()),
+        type_id=goal_type.id,
+        value={"target": "Learn rust programming"},
+        status="active",
+    )
     db_session.add_all([mem1, mem2])
     db_session.commit()
     return db_session
