@@ -10,7 +10,8 @@ from sqlalchemy import (
     BigInteger,
     Integer,
     JSON,
-    Index
+    Index,
+    Float
 )
 from sqlalchemy.dialects.postgresql import TSVECTOR
 from pgvector.sqlalchemy import Vector
@@ -160,6 +161,102 @@ class Embedding(Base):
 
     embedding_vector: Mapped[list[float]] = mapped_column(
         Vector(384)
+    )
+
+
+class MemoryType(Base):
+    __tablename__ = "memory_types"
+
+    id: Mapped[str] = mapped_column(
+        String,
+        primary_key=True
+    )
+    name: Mapped[str | None] = mapped_column(
+        String,
+        unique=True
+    )
+    description: Mapped[str | None] = mapped_column(
+        Text
+    )
+
+class Memory(Base):
+    __tablename__ = "memories"
+
+    id: Mapped[str] = mapped_column(
+        String,
+        primary_key=True
+    )
+    type_id: Mapped[str | None] = mapped_column(
+        ForeignKey("memory_types.id", ondelete="SET NULL")
+    )
+    value: Mapped[dict | None] = mapped_column(
+        JSON
+    )
+    status: Mapped[str | None] = mapped_column(
+        String
+    )
+    create_time: Mapped[datetime | None] = mapped_column(
+        DateTime
+    )
+    update_time: Mapped[datetime | None] = mapped_column(
+        DateTime
+    )
+
+class MemoryEvidence(Base):
+    __tablename__ = "memory_evidence"
+
+    id: Mapped[str] = mapped_column(
+        String,
+        primary_key=True
+    )
+    memory_id: Mapped[str | None] = mapped_column(
+        ForeignKey("memories.id", ondelete="CASCADE")
+    )
+    message_id: Mapped[str | None] = mapped_column(
+        ForeignKey("messages.id", ondelete="CASCADE")
+    )
+    extracted_at: Mapped[datetime | None] = mapped_column(
+        DateTime
+    )
+    confidence_score: Mapped[float | None] = mapped_column(
+        Float
+    )
+    reasoning: Mapped[str | None] = mapped_column(
+        Text
+    )
+
+class Entity(Base):
+    __tablename__ = "entities"
+
+    id: Mapped[str] = mapped_column(
+        String,
+        primary_key=True
+    )
+    name: Mapped[str | None] = mapped_column(
+        String
+    )
+    category: Mapped[str | None] = mapped_column(
+        String
+    )
+
+class Relationship(Base):
+    __tablename__ = "relationships"
+
+    id: Mapped[str] = mapped_column(
+        String,
+        primary_key=True
+    )
+    source_entity_id: Mapped[str | None] = mapped_column(
+        ForeignKey("entities.id", ondelete="CASCADE")
+    )
+    target_entity_id: Mapped[str | None] = mapped_column(
+        ForeignKey("entities.id", ondelete="CASCADE")
+    )
+    relationship_type: Mapped[str | None] = mapped_column(
+        String
+    )
+    memory_id: Mapped[str | None] = mapped_column(
+        ForeignKey("memories.id", ondelete="SET NULL")
     )
 
 
