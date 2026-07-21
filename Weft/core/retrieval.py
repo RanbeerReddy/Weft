@@ -11,8 +11,9 @@ from sqlalchemy import select, text, func
 from sqlalchemy.orm import Session
 
 from Weft.storage.database import SessionLocal
-from Weft.storage.models import Embedding, Chunk
+from Weft.storage.models import Embedding, Chunk, Conversation, Message
 from Weft.evaluation.core.metrics import RetrievalResult
+from datetime import datetime
 
 
 class VectorRetriever:
@@ -42,16 +43,20 @@ class VectorRetriever:
             # 2. Compute distance attribute for pgvector
             distance_attr = Embedding.embedding_vector.cosine_distance(vector_embedding)
             
-            # 3. Build query
             stmt = (
                 select(
                     Embedding.conversation_id,
                     Embedding.message_id,
                     Embedding.chunk_order,
                     Chunk.chunk_text,
-                    distance_attr.label("distance")
+                    distance_attr.label("distance"),
+                    Conversation.title,
+                    Message.role,
+                    Message.create_time
                 )
                 .join(Chunk, Chunk.id == Embedding.chunk_order)
+                .join(Message, Message.id == Embedding.message_id)
+                .join(Conversation, Conversation.id == Embedding.conversation_id)
                 .order_by("distance")
                 .limit(k)
             )
@@ -62,6 +67,17 @@ class VectorRetriever:
             # 5. Convert to RetrievalResult
             retrieved = []
             for rank, row in enumerate(results, start=1):
+                timestamp = None
+                if row.create_time:
+                    try:
+                        ts = row.create_time
+                        if isinstance(ts, (int, float)):
+                            timestamp = datetime.fromtimestamp(ts).isoformat()
+                        else:
+                            timestamp = str(ts)
+                    except Exception:
+                        timestamp = str(row.create_time)
+                        
                 retrieved.append(
                     RetrievalResult(
                         chunk_text=row.chunk_text,
@@ -69,7 +85,10 @@ class VectorRetriever:
                         conversation_id=row.conversation_id,
                         message_id=row.message_id,
                         chunk_order=row.chunk_order,
-                        rank=rank
+                        rank=rank,
+                        conversation_title=row.title,
+                        message_role=row.role,
+                        message_timestamp=timestamp
                     )
                 )
             
@@ -129,7 +148,10 @@ class CrossEncoderReranker:
                     conversation_id=candidate.conversation_id,
                     message_id=candidate.message_id,
                     chunk_order=candidate.chunk_order,
-                    rank=new_rank
+                    rank=new_rank,
+                    conversation_title=candidate.conversation_title,
+                    message_role=candidate.message_role,
+                    message_timestamp=candidate.message_timestamp
                 )
             )
             
@@ -171,23 +193,25 @@ class LexicalRetriever:
     def retrieve(self, query: str, k: int = 10, session: Optional[Session] = None) -> List[RetrievalResult]:
         db = session or SessionLocal()
         
-        # Convert "hello world" to "hello | world" to get OR behavior instead of strict AND
-        import re
-        clean_query = re.sub(r'[^a-zA-Z0-9 ]', '', query)
-        or_query = ' | '.join([w for w in clean_query.split() if w.strip()])
-        if not or_query:
+        if not query.strip():
             return []
             
         try:
+            ts_query = func.websearch_to_tsquery('english', query)
             stmt = (
                 select(
                     Chunk.conversation_id,
                     Chunk.message_id,
                     Chunk.chunk_order,
                     Chunk.chunk_text,
-                    func.ts_rank_cd(Chunk.chunk_tsvector, func.to_tsquery('english', or_query)).label('rank_score')
+                    func.ts_rank_cd(Chunk.chunk_tsvector, ts_query).label('rank_score'),
+                    Conversation.title,
+                    Message.role,
+                    Message.create_time
                 )
-                .where(Chunk.chunk_tsvector.op('@@')(func.to_tsquery('english', or_query)))
+                .join(Message, Message.id == Chunk.message_id)
+                .join(Conversation, Conversation.id == Chunk.conversation_id)
+                .where(Chunk.chunk_tsvector.op('@@')(ts_query))
                 .order_by(text('rank_score DESC'))
                 .limit(k)
             )
@@ -196,6 +220,17 @@ class LexicalRetriever:
             
             retrieved = []
             for rank, row in enumerate(results, start=1):
+                timestamp = None
+                if row.create_time:
+                    try:
+                        ts = row.create_time
+                        if isinstance(ts, (int, float)):
+                            timestamp = datetime.fromtimestamp(ts).isoformat()
+                        else:
+                            timestamp = str(ts)
+                    except Exception:
+                        timestamp = str(row.create_time)
+                        
                 retrieved.append(
                     RetrievalResult(
                         chunk_text=row.chunk_text,
@@ -203,7 +238,10 @@ class LexicalRetriever:
                         conversation_id=row.conversation_id,
                         message_id=row.message_id,
                         chunk_order=row.chunk_order,
-                        rank=rank
+                        rank=rank,
+                        conversation_title=row.title,
+                        message_role=row.role,
+                        message_timestamp=timestamp
                     )
                 )
             
@@ -266,7 +304,10 @@ class HybridRetriever:
                     conversation_id=r.conversation_id,
                     message_id=r.message_id,
                     chunk_order=r.chunk_order,
-                    rank=rank
+                    rank=rank,
+                    conversation_title=r.conversation_title,
+                    message_role=r.message_role,
+                    message_timestamp=r.message_timestamp
                 )
             )
             
@@ -312,7 +353,10 @@ class HybridRetriever:
                     conversation_id=r.conversation_id,
                     message_id=r.message_id,
                     chunk_order=r.chunk_order,
-                    rank=rank
+                    rank=rank,
+                    conversation_title=r.conversation_title,
+                    message_role=r.message_role,
+                    message_timestamp=r.message_timestamp
                 )
             )
             
