@@ -2,7 +2,7 @@
 
 import re
 from dataclasses import dataclass
-from typing import Any, Dict, List, Set
+from typing import Any, Dict, List, Optional, Set
 
 
 @dataclass
@@ -15,9 +15,9 @@ class RetrievalResult:
     message_id: str
     chunk_order: int
     rank: int  # position in result set (1-indexed)
-    conversation_title: str = None
-    message_role: str = None
-    message_timestamp: str = None
+    conversation_title: Optional[str] = None
+    message_role: Optional[str] = None
+    message_timestamp: Optional[str] = None
 
 
 @dataclass

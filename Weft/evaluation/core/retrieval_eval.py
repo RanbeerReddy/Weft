@@ -148,7 +148,7 @@ def format_report(summary: EvaluationSummary, verbose: bool = False) -> str:
         for m in best_by_mrr:
             lines.append(f"  • {m.query[:50]}")
             lines.append(
-                f"    MRR: {m.mrr:.3f}, Hit@1: {m.hit_at_1}, Recall: {m.keyword_recall:.2f}"
+                f"    MRR: {m.mrr:.3f}, Hit@1: {m.hit_at_1}, Recall: {m.keyword_recall:.2f}"  # noqa: E501
             )
         lines.append("")
 
@@ -162,7 +162,7 @@ def format_report(summary: EvaluationSummary, verbose: bool = False) -> str:
             if m.retrieved_chunks:
                 top_chunk = m.retrieved_chunks[0]
                 lines.append(
-                    f"    Top result (dist={top_chunk.distance:.3f}): {top_chunk.chunk_text[:60]}..."
+                    f"    Top result (dist={top_chunk.distance:.3f}): {top_chunk.chunk_text[:60]}..."  # noqa: E501
                 )
         lines.append("")
 
@@ -177,17 +177,17 @@ def format_report(summary: EvaluationSummary, verbose: bool = False) -> str:
             lines.append(f"[{i}] Query: {m.query}")
             lines.append(f"    Expected Keywords: {', '.join(m.expected_keywords)}")
             lines.append(
-                f"    Hit@1/3/5/10: {m.hit_at_1}/{m.hit_at_3}/{m.hit_at_5}/{m.hit_at_10}"
+                f"    Hit@1/3/5/10: {m.hit_at_1}/{m.hit_at_3}/{m.hit_at_5}/{m.hit_at_10}"  # noqa: E501
             )
             lines.append(
-                f"    Recall: {m.keyword_recall:.2f}, Precision: {m.keyword_precision:.2f}, MRR: {m.mrr:.3f}"
+                f"    Recall: {m.keyword_recall:.2f}, Precision: {m.keyword_precision:.2f}, MRR: {m.mrr:.3f}"  # noqa: E501
             )
 
             if m.retrieved_chunks:
                 lines.append("    Top 3 retrieved chunks:")
                 for chunk in m.retrieved_chunks[:3]:
                     lines.append(
-                        f"      [{chunk.rank}] dist={chunk.distance:.4f}: {chunk.chunk_text[:70]}..."
+                        f"      [{chunk.rank}] dist={chunk.distance:.4f}: {chunk.chunk_text[:70]}..."  # noqa: E501
                     )
             lines.append("")
 

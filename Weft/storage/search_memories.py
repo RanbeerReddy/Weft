@@ -13,7 +13,7 @@ def search_memories(query: str):
     db = SessionLocal()
     try:
         # 1. Global Context & Structured Memories
-        # In a real system, we'd use NER. Here we do simple keyword matching on JSON string.
+        # In a real system, we'd use NER. Here we do simple keyword matching on JSON string.  # noqa: E501
         print("\n[Structured Memories]")
         memories = db.scalars(select(Memory).where(Memory.status == "active")).all()
         found_memories = []
@@ -37,7 +37,7 @@ def search_memories(query: str):
             query_embedding = model.encode(query, normalize_embeddings=True).tolist()
 
             # Using pgvector L2 distance or cosine similarity
-            # Since the Vector column is setup, we can use l2_distance or cosine_distance
+            # Since the Vector column is setup, we can use l2_distance or cosine_distance  # noqa: E501
             # We'll use l2_distance for simplicity.
             results = db.execute(
                 select(
@@ -55,7 +55,7 @@ def search_memories(query: str):
                     msg = db.get(Message, row.message_id)
                     if msg:
                         print(
-                            f" - [Message {msg.id}] (Dist: {row.dist:.4f}): {msg.content[:100]}..."
+                            f" - [Message {msg.id}] (Dist: {row.dist:.4f}): {msg.content[:100]}..."  # noqa: E501
                         )
             else:
                 print(" - No semantic chunks found. (Have embeddings been created?)")

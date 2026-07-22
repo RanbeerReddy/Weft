@@ -63,7 +63,7 @@ def mock_sentence_transformer(monkeypatch):
             pass
 
         def encode(self, sentences, *args, **kwargs):
-            # Return a deterministic mock vector of dimension 384 (as expected by pgvector)
+            # Return a deterministic mock vector of dimension 384 (as expected by pgvector)  # noqa: E501
             # If multiple sentences, return a list of vectors
             dim = 384
             if isinstance(sentences, str):

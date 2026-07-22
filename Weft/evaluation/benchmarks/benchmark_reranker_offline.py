@@ -1,4 +1,4 @@
-"""Offline benchmark reranking pipeline vs baseline using pre-retrieved top 100 candidates."""
+"""Offline benchmark reranking pipeline vs baseline using pre-retrieved top 100 candidates."""  # noqa: E501
 
 import json
 import time
@@ -179,10 +179,10 @@ def run_benchmark():
             if r_hit_rank:
                 correct_chunk = r_res["retrieved"][r_hit_rank - 1]
                 print(
-                    f"  Reranker Score (saved as distance): {-correct_chunk.distance:.4f}"
+                    f"  Reranker Score (saved as distance): {-correct_chunk.distance:.4f}"  # noqa: E501
                 )
                 print(
-                    "  Explanation: The reranker successfully identified semantic interaction between query and chunk."
+                    "  Explanation: The reranker successfully identified semantic interaction between query and chunk."  # noqa: E501
                 )
 
 

@@ -29,7 +29,6 @@ from Weft.storage.models import Chunk, Conversation, Message
 
 def search_phrase_in_chunks(db, phrase: str) -> Dict[str, Any]:
     """Search for a phrase across all chunks (case-insensitive)."""
-    pattern = f"%{phrase}%"
 
     # Find matching chunks
     stmt = select(
@@ -201,16 +200,16 @@ def validate_benchmark_phrases(
     }
 
 
-def run_validation(
-    memory_queries_path: str = None,
-    test_queries_path: str = None,
+def run_validation(  # noqa: C901
+    memory_queries_path: Optional[str] = None,
+    test_queries_path: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Run corpus validation against all benchmark files."""
     print("=" * 70)
     print("PHASE 2 — CORPUS VALIDATION")
     print("=" * 70)
 
-    report = {"timestamp": datetime.now().isoformat()}
+    report: Dict[str, Any] = {"timestamp": datetime.now().isoformat()}
 
     # Load memory queries
     if memory_queries_path is None:

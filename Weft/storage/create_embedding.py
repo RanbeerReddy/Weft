@@ -1,13 +1,11 @@
 from sentence_transformers import SentenceTransformer
-from sqlalchemy import select
+from sqlalchemy import delete, select
 
 from Weft.storage.database import SessionLocal
 from Weft.storage.models import Chunk, Embedding
 from Weft.utils.exceptions import WeftException
 
 model = SentenceTransformer("BAAI/bge-small-en-v1.5")
-
-from sqlalchemy import delete
 
 
 def clear_embeddings():

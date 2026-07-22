@@ -51,7 +51,10 @@ def extract_message_text(message: dict[str, Any]) -> str:
 
 
 def get_author_role(message: dict[str, Any]) -> str:
-    return message.get("author", {}).get("role", "unknown")
+    author = message.get("author")
+    if isinstance(author, dict):
+        return str(author.get("role", "unknown"))
+    return "unknown"
 
 
 # =========================================================
@@ -177,7 +180,7 @@ def reconstruct_conversation(conversation: dict[str, Any]) -> None:
 # =========================================================
 def main() -> None:
     # Merge input files into one
-    all_conversations = []
+    all_conversations: list[dict[str, Any]] = []
     for file in INPUT_FILES:
         path = Path(file)
         if not path.exists():
@@ -201,7 +204,7 @@ def main() -> None:
         try:
             reconstruct_conversation(conversation)
             print(
-                f"[{idx}/{len(all_conversations)}] Processed: {conversation.get('title', 'untitled')}"
+                f"[{idx}/{len(all_conversations)}] Processed: {conversation.get('title', 'untitled')}"  # noqa: E501
             )
         except Exception as e:
             raise WeftException(str(e), e) from e

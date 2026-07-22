@@ -1,4 +1,5 @@
 import pytest
+
 from Weft.storage.extract_memories import deterministic_extract
 
 

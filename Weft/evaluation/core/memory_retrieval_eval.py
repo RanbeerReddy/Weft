@@ -17,7 +17,7 @@ import sys
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
 from sentence_transformers import SentenceTransformer
 from sqlalchemy import select
@@ -28,9 +28,9 @@ from Weft.evaluation.core.memory_metrics import (
     MemoryQueryMetrics,
     MemoryRetrievalResult,
 )
-from Weft.utils.exceptions import WeftException
 from Weft.storage.database import SessionLocal
 from Weft.storage.models import Chunk, Conversation, Embedding, Message
+from Weft.utils.exceptions import WeftException
 
 # Model loaded at module level
 MODEL = None
@@ -46,7 +46,8 @@ def get_model() -> SentenceTransformer:
 
 
 def retrieve_top_50_with_metadata(query: str) -> List[MemoryRetrievalResult]:
-    """Retrieve top-50 chunks for a query WITH metadata (conversation, message, timestamp).
+    """Retrieve top-50 chunks for a query WITH metadata
+    (conversation, message, timestamp).
 
     This retrieves more results for candidate recall analysis and includes
     conversation title, message role, and timestamp for diagnostics.
@@ -265,12 +266,12 @@ def _print_query_details(metrics: MemoryQueryMetrics):
     print(f"\n  Query: {metrics.query}")
     print(f"  Expected phrase: {metrics.expected_phrase}")
     print(f"  Type: {metrics.query_type}")
-    print(f"\n  Memory Hits:")
+    print("\n  Memory Hits:")
     print(f"    Hit@1:  {metrics.memory_hit_at_1}")
     print(f"    Hit@3:  {metrics.memory_hit_at_3}")
     print(f"    Hit@5:  {metrics.memory_hit_at_5}")
     print(f"    Hit@10: {metrics.memory_hit_at_10}")
-    print(f"\n  Candidate Recall:")
+    print("\n  Candidate Recall:")
     print(f"    Recall@10: {metrics.candidate_recall_at_10}")
     print(f"    Recall@20: {metrics.candidate_recall_at_20}")
     print(f"    Recall@50: {metrics.candidate_recall_at_50}")
@@ -278,7 +279,7 @@ def _print_query_details(metrics: MemoryQueryMetrics):
     print(f"  Phrase found at rank: {metrics.phrase_rank}")
 
     if metrics.retrieved_chunks:
-        print(f"\n  Top 3 Retrieved Chunks:")
+        print("\n  Top 3 Retrieved Chunks:")
         for chunk in metrics.retrieved_chunks[:3]:
             status = (
                 "✓ HAS PHRASE"
@@ -294,7 +295,7 @@ def _print_query_details(metrics: MemoryQueryMetrics):
             print(f"    Preview: {chunk.chunk_text[:150]}...")
 
 
-def format_memory_report(
+def format_memory_report(  # noqa: C901
     summary: MemoryEvaluationSummary, verbose: bool = False
 ) -> str:
     """Format human-readable memory evaluation report.
@@ -314,27 +315,27 @@ def format_memory_report(
     # Summary metrics
     lines.append("\nMEMORY HIT RATES:")
     lines.append(
-        f"  Hit@1:  {summary.memory_hit_at_1_rate*100:5.1f}%  ({summary.queries_with_hits_at_1}/{summary.total_queries})"
+        f"  Hit@1:  {summary.memory_hit_at_1_rate*100:5.1f}%  ({summary.queries_with_hits_at_1}/{summary.total_queries})"  # noqa: E501
     )
     lines.append(
-        f"  Hit@3:  {summary.memory_hit_at_3_rate*100:5.1f}%  ({summary.queries_with_hits_at_3}/{summary.total_queries})"
+        f"  Hit@3:  {summary.memory_hit_at_3_rate*100:5.1f}%  ({summary.queries_with_hits_at_3}/{summary.total_queries})"  # noqa: E501
     )
     lines.append(
-        f"  Hit@5:  {summary.memory_hit_at_5_rate*100:5.1f}%  ({summary.queries_with_hits_at_5}/{summary.total_queries})"
+        f"  Hit@5:  {summary.memory_hit_at_5_rate*100:5.1f}%  ({summary.queries_with_hits_at_5}/{summary.total_queries})"  # noqa: E501
     )
     lines.append(
-        f"  Hit@10: {summary.memory_hit_at_10_rate*100:5.1f}%  ({summary.queries_with_hits_at_10}/{summary.total_queries})"
+        f"  Hit@10: {summary.memory_hit_at_10_rate*100:5.1f}%  ({summary.queries_with_hits_at_10}/{summary.total_queries})"  # noqa: E501
     )
 
     lines.append("\nCANDIDATE RECALL (phrase found anywhere in range):")
     lines.append(
-        f"  Recall@10: {summary.candidate_recall_at_10_rate*100:5.1f}%  ({summary.queries_with_candidate_recall_at_10}/{summary.total_queries})"
+        f"  Recall@10: {summary.candidate_recall_at_10_rate*100:5.1f}%  ({summary.queries_with_candidate_recall_at_10}/{summary.total_queries})"  # noqa: E501
     )
     lines.append(
-        f"  Recall@20: {summary.candidate_recall_at_20_rate*100:5.1f}%  ({summary.queries_with_candidate_recall_at_20}/{summary.total_queries})"
+        f"  Recall@20: {summary.candidate_recall_at_20_rate*100:5.1f}%  ({summary.queries_with_candidate_recall_at_20}/{summary.total_queries})"  # noqa: E501
     )
     lines.append(
-        f"  Recall@50: {summary.candidate_recall_at_50_rate*100:5.1f}%  ({summary.queries_with_candidate_recall_at_50}/{summary.total_queries})"
+        f"  Recall@50: {summary.candidate_recall_at_50_rate*100:5.1f}%  ({summary.queries_with_candidate_recall_at_50}/{summary.total_queries})"  # noqa: E501
     )
 
     lines.append(f"\nMEAN RECIPROCAL RANK (MRR): {summary.avg_phrase_mrr:.4f}")
@@ -381,7 +382,7 @@ def format_memory_report(
         for m in best:
             lines.append(f"  • {m.query[:50]}...")
             lines.append(
-                f"    Expected: {m.expected_phrase} | Found at rank: {m.phrase_rank} | MRR: {m.phrase_mrr:.4f}"
+                f"    Expected: {m.expected_phrase} | Found at rank: {m.phrase_rank} | MRR: {m.phrase_mrr:.4f}"  # noqa: E501
             )
 
         lines.append("\n" + "-" * 70)
@@ -396,7 +397,7 @@ def format_memory_report(
                 if m.candidate_recall_at_50:
                     lines.append(f"    → Found at rank {m.phrase_rank} (ranking issue)")
                 else:
-                    lines.append(f"    → NOT in top-50 (embedding/chunking issue)")
+                    lines.append("    → NOT in top-50 (embedding/chunking issue)")
         else:
             lines.append("  [✓] All queries retrieved correct memory in top-10")
 
@@ -454,7 +455,7 @@ def main():
         "--queries",
         type=str,
         default=None,
-        help="Path to memory_queries.json file (default: Weft/evaluation/memory_queries.json)",
+        help="Path to memory_queries.json file (default: Weft/evaluation/memory_queries.json)",  # noqa: E501
     )
     parser.add_argument(
         "--verbose", action="store_true", help="Print detailed per-query results"

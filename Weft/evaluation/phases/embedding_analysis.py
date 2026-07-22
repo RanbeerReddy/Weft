@@ -207,7 +207,7 @@ def analyze_embedding_for_query(
     return result
 
 
-def run_embedding_analysis(
+def run_embedding_analysis(  # noqa: C901
     failure_report_path: str = None,
     memory_queries_path: str = None,
 ) -> Dict[str, Any]:

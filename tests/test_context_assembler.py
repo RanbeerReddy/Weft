@@ -9,6 +9,7 @@ from Weft.storage.models import Memory, MemoryType
 @pytest.fixture
 def seeded_db(db_session):
     import uuid
+
     from sqlalchemy import select
 
     # Seed some memory types and memories for the test

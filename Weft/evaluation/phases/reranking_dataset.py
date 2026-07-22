@@ -110,7 +110,7 @@ def find_correct_chunk_info(db, phrase: str) -> Optional[Dict[str, Any]]:
     }
 
 
-def run_reranking_preparation(
+def run_reranking_preparation(  # noqa: C901
     memory_queries_path: str = None,
 ) -> Dict[str, Any]:
     """Prepare reranking dataset for all benchmark queries."""
@@ -204,7 +204,7 @@ def run_reranking_preparation(
 
             if correct_rank:
                 print(
-                    f"  Correct chunk at rank {correct_rank} (dist={correct_distance:.4f})"
+                    f"  Correct chunk at rank {correct_rank} (dist={correct_distance:.4f})"  # noqa: E501
                 )
             elif correct:
                 print("  Correct chunk exists but NOT in top-100")

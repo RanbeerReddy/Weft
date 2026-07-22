@@ -72,8 +72,8 @@ def assemble_context(query: str) -> str:
 
         # 4. Assembly
         final_prompt = (
-            "You are a helpful assistant with access to the user's long-term memory and past conversations.\n"
-            "Use the provided context to answer the query accurately and adhere to the user's preferences.\n\n"
+            "You are a helpful assistant with access to the user's long-term memory and past conversations.\n"  # noqa: E501
+            "Use the provided context to answer the query accurately and adhere to the user's preferences.\n\n"  # noqa: E501
             f"{chr(10).join(context_parts)}\n\n"
             f"### User Query ###\n{query}\n"
         )

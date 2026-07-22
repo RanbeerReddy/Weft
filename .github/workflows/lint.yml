@@ -20,4 +20,4 @@ jobs:
 
             - run: black --check .
             - run: ruff check .
-            - run: mypy src/
+            - run: mypy Weft

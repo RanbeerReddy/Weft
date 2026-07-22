@@ -17,7 +17,7 @@ class MemoryRetrievalResult:
     chunk_text: str
     conversation_id: str
     conversation_title: Optional[str] = None
-    message_id: str = None
+    message_id: Optional[str] = None
     message_role: Optional[str] = None
     message_timestamp: Optional[str] = None
     phrase_found: bool = False
@@ -48,7 +48,7 @@ class MemoryQueryMetrics:
     phrase_rank: Optional[int] = None  # First rank where phrase found
 
     # Diagnostics
-    retrieved_chunks: List[MemoryRetrievalResult] = None
+    retrieved_chunks: Optional[List[MemoryRetrievalResult]] = None
     has_hit: bool = False
 
 
@@ -66,7 +66,7 @@ class MemoryEvaluationSummary:
     queries_with_candidate_recall_at_50: int = 0
 
     avg_phrase_mrr: float = 0.0
-    per_query_metrics: List[MemoryQueryMetrics] = None
+    per_query_metrics: Optional[List[MemoryQueryMetrics]] = None
 
     def compute_rates(self):
         """Calculate success rates."""

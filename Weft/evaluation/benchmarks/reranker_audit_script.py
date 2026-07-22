@@ -60,7 +60,7 @@ def run_ablation_tests(dataset: List[Dict[str, Any]]):
     for top_n in [10, 20, 50, 100]:
         agg, _ = evaluate_with_reranker(dataset, reranker, top_n)
         print(
-            f"Top {top_n:<3} Reranked -> Hit@1: {agg['hit_at_1']:.3f} | MRR: {agg['mrr']:.3f} | Latency: {agg['avg_latency_ms']:.1f}ms"
+            f"Top {top_n:<3} Reranked -> Hit@1: {agg['hit_at_1']:.3f} | MRR: {agg['mrr']:.3f} | Latency: {agg['avg_latency_ms']:.1f}ms"  # noqa: E501
         )
 
 
@@ -98,7 +98,7 @@ def run_chunking_vs_coherent_test(dataset: List[Dict[str, Any]]):
     print("\nFractured Chunks (Baseline):")
     for r in retrieved_fractured[:3]:
         print(
-            f"Rank {r.rank} | Score {-r.distance:.4f} | {r.chunk_text[:60].replace(chr(10), ' ')}"
+            f"Rank {r.rank} | Score {-r.distance:.4f} | {r.chunk_text[:60].replace(chr(10), ' ')}"  # noqa: E501
         )
 
     # 2. Evaluate with manually coherent text
@@ -120,7 +120,7 @@ def run_chunking_vs_coherent_test(dataset: List[Dict[str, Any]]):
     print("\nCoherent Reconstructed Chunk:")
     for r in retrieved_coherent:
         print(
-            f"Rank {r.rank} | Score {-r.distance:.4f} | {r.chunk_text[:60].replace(chr(10), ' ')}"
+            f"Rank {r.rank} | Score {-r.distance:.4f} | {r.chunk_text[:60].replace(chr(10), ' ')}"  # noqa: E501
         )
 
     print("\nComparison:")
@@ -162,7 +162,7 @@ def analyze_scores(dataset: List[Dict[str, Any]]):
     print("\nAfter Reranking:")
     for r in retrieved:
         print(
-            f"New Rank: {r.rank} | CE Score: {-r.distance:.4f} | Char count: {len(r.chunk_text)}"
+            f"New Rank: {r.rank} | CE Score: {-r.distance:.4f} | Char count: {len(r.chunk_text)}"  # noqa: E501
         )
 
 

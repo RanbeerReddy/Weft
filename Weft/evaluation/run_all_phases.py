@@ -137,7 +137,7 @@ def run_all():
     return all_reports
 
 
-def generate_final_report(all_reports: dict):
+def generate_final_report(all_reports: dict):  # noqa: C901
     """Generate the Phase 9 final report from all collected data."""
 
     lines = []
@@ -240,7 +240,7 @@ def generate_final_report(all_reports: dict):
 
         if chunk_stats:
             lines.append(
-                f"Chunk statistics: avg={chunk_stats.get('avg_chunk_length', '?')} chars, "
+                f"Chunk statistics: avg={chunk_stats.get('avg_chunk_length', '?')} chars, "  # noqa: E501
                 f"min={chunk_stats.get('min_chunk_length', '?')}, "
                 f"max={chunk_stats.get('max_chunk_length', '?')}\n"
             )
@@ -268,7 +268,7 @@ def generate_final_report(all_reports: dict):
                 lines.append("**LIKELY NOT** — Most gaps are moderate or small.\n")
         else:
             lines.append(
-                "No Category B/C failures to analyze — embeddings may not be the bottleneck.\n"
+                "No Category B/C failures to analyze — embeddings may not be the bottleneck.\n"  # noqa: E501
             )
     else:
         lines.append("**UNKNOWN** — Phase 4 failed.\n")
@@ -306,7 +306,7 @@ def generate_final_report(all_reports: dict):
         lines.append(f"- Gap (ranking improvement potential): {gap}\n")
         if gap > 0:
             lines.append(
-                f"**YES** — {gap} queries have correct chunks that could be promoted with better ranking.\n"
+                f"**YES** — {gap} queries have correct chunks that could be promoted with better ranking.\n"  # noqa: E501
             )
         else:
             lines.append(
@@ -376,15 +376,15 @@ def generate_final_report(all_reports: dict):
     lines.append("## 9. Is GraphRAG Justified at the Current Stage?\n")
     lines.append("**NO** — Based on the evidence:\n")
     lines.append(
-        "1. The current pipeline has unresolved issues (data missing, possible duplicates, "
+        "1. The current pipeline has unresolved issues (data missing, possible duplicates, "  # noqa: E501
         "no metadata enrichment)"
     )
     lines.append(
-        "2. Simpler improvements (hybrid search, reranking, metadata enrichment) have not "
+        "2. Simpler improvements (hybrid search, reranking, metadata enrichment) have not "  # noqa: E501
         "been fully explored"
     )
     lines.append(
-        "3. GraphRAG adds significant complexity without addressing the identified bottlenecks"
+        "3. GraphRAG adds significant complexity without addressing the identified bottlenecks"  # noqa: E501
     )
     lines.append(
         "4. The primary failures are due to data gaps and embedding quality, not "
@@ -396,23 +396,23 @@ def generate_final_report(all_reports: dict):
     lines.append("| Rank | Improvement | Expected Impact | Effort |")
     lines.append("|------|-------------|-----------------|--------|")
     lines.append(
-        '| 1 | Fix benchmark validity (remove Category A queries) | Immediately corrects 33%+ of "failures" | Low |'
+        '| 1 | Fix benchmark validity (remove Category A queries) | Immediately corrects 33%+ of "failures" | Low |'  # noqa: E501
     )
     lines.append(
-        "| 2 | Add duplicate chunk protection + dedup existing data | Prevents corrupted search results | Low |"
+        "| 2 | Add duplicate chunk protection + dedup existing data | Prevents corrupted search results | Low |"  # noqa: E501
     )
     lines.append(
-        "| 3 | Enrich chunk text with metadata (title, role) | Improves embedding quality for all queries | Medium |"
+        "| 3 | Enrich chunk text with metadata (title, role) | Improves embedding quality for all queries | Medium |"  # noqa: E501
     )
     lines.append(
-        "| 4 | Add hybrid search (BM25 + vector) | Catches keyword-specific queries that vectors miss | Medium |"
+        "| 4 | Add hybrid search (BM25 + vector) | Catches keyword-specific queries that vectors miss | Medium |"  # noqa: E501
     )
     lines.append(
-        "| 5 | Add cross-encoder reranking (top-100 → top-10) | Promotes correctly retrieved but poorly ranked chunks | Medium |"
+        "| 5 | Add cross-encoder reranking (top-100 → top-10) | Promotes correctly retrieved but poorly ranked chunks | Medium |"  # noqa: E501
     )
     lines.append("")
     lines.append(
-        "> **Note**: Improvements #1 and #2 are prerequisites. They fix data quality issues "
+        "> **Note**: Improvements #1 and #2 are prerequisites. They fix data quality issues "  # noqa: E501
     )
     lines.append("> that would undermine any retrieval improvement measurement.")
 

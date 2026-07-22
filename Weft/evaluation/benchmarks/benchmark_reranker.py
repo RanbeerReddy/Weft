@@ -146,10 +146,10 @@ def run_benchmark():
             if r_hit_rank:
                 correct_chunk = r_res["retrieved"][r_hit_rank - 1]
                 print(
-                    f"  Reranker Score (saved as distance): {-correct_chunk.distance:.4f}"
+                    f"  Reranker Score (saved as distance): {-correct_chunk.distance:.4f}"  # noqa: E501
                 )
                 print(
-                    "  Explanation: The reranker successfully lifted this chunk from outside the baseline top-10 or from a lower rank by recognizing semantic interaction between query and chunk."
+                    "  Explanation: The reranker successfully lifted this chunk from outside the baseline top-10 or from a lower rank by recognizing semantic interaction between query and chunk."  # noqa: E501
                 )
 
 

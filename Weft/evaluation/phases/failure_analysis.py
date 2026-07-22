@@ -247,7 +247,7 @@ def run_failure_analysis(
             is_failed = query_text in failed_queries
 
             print(
-                f"\n[{i}/{len(queries)}] {'FAILED' if is_failed else 'PASSED'}: {query_text}"
+                f"\n[{i}/{len(queries)}] {'FAILED' if is_failed else 'PASSED'}: {query_text}"  # noqa: E501
             )
             print(f"  Expected: {expected}")
 

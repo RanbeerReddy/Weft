@@ -10,7 +10,7 @@ from Weft.evaluation.core.memory_metrics import (
 )
 
 
-def main():
+def main():  # noqa: C901
     data_path = Path("Weft/evaluation/data/memory_queries.json")
     with open(data_path, "r") as f:
         queries = json.load(f)

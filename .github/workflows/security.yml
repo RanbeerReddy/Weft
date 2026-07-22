@@ -11,7 +11,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - run: pip install bandit safety
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
 
-      - run: bandit -r . -x tests
-      - run: safety check
+      - run: |
+          python -m pip install --upgrade pip
+          pip install bandit safety
+
+      - run: bandit -r . -x ./tests
+      - run: safety scan

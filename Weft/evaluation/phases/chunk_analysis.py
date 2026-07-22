@@ -89,7 +89,7 @@ def simulate_chunking(content: str) -> List[str]:
     return SPLITTER.split_text(content)
 
 
-def analyze_chunking_for_phrase(
+def analyze_chunking_for_phrase(  # noqa: C901
     db, phrase: str, query: str, query_type: str = None
 ) -> Dict[str, Any]:
     """Analyze how chunking affects a specific phrase.
@@ -233,7 +233,7 @@ def analyze_chunking_for_phrase(
     return result
 
 
-def run_chunk_analysis(
+def run_chunk_analysis(  # noqa: C901
     failure_report_path: str = None,
     memory_queries_path: str = None,
 ) -> Dict[str, Any]:

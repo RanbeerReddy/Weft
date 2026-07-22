@@ -179,7 +179,8 @@ def find_orphaned_embeddings(db) -> int:
         .outerjoin(Chunk, Chunk.id == Embedding.chunk_order)
         .where(Chunk.id.is_(None))
     )
-    return db.scalar(stmt)
+    result = db.scalar(stmt)
+    return int(result) if result is not None else 0
 
 
 def find_messages_with_empty_content(db) -> int:
@@ -187,10 +188,11 @@ def find_messages_with_empty_content(db) -> int:
     stmt = select(func.count(Message.id)).where(
         (Message.content.is_(None)) | (Message.content == "")
     )
-    return db.scalar(stmt)
+    result = db.scalar(stmt)
+    return int(result) if result is not None else 0
 
 
-def check_pgvector_index(db) -> List[str]:
+def check_pgvector_index(db) -> List[Dict[str, Any]]:
     """Check if there's an index on the embedding_vector column."""
     stmt = text(
         """
@@ -203,13 +205,13 @@ def check_pgvector_index(db) -> List[str]:
     return [{"name": r[0], "definition": r[1]} for r in results]
 
 
-def run_audit(json_path: str = "conversations.json") -> Dict[str, Any]:
+def run_audit(json_path: str = "conversations.json") -> Dict[str, Any]:  # noqa: C901
     """Run the complete ingestion audit."""
     print("=" * 70)
     print("PHASE 1 — INGESTION AUDIT")
     print("=" * 70)
 
-    report = {
+    report: Dict[str, Any] = {
         "timestamp": datetime.now().isoformat(),
         "source_file": json_path,
     }
@@ -308,10 +310,10 @@ def run_audit(json_path: str = "conversations.json") -> Dict[str, Any]:
         print("\n  Pipeline Completeness:")
         print(f"    JSON → DB Conversations: {json_total} → {db_total}")
         print(
-            f"    DB Messages → Chunks:    {db_counts['messages']} → {db_counts['chunks']}"
+            f"    DB Messages → Chunks:    {db_counts['messages']} → {db_counts['chunks']}"  # noqa: E501
         )
         print(
-            f"    DB Chunks → Embeddings:  {db_counts['chunks']} → {db_counts['embeddings']}"
+            f"    DB Chunks → Embeddings:  {db_counts['chunks']} → {db_counts['embeddings']}"  # noqa: E501
         )
 
         if db_counts["chunks"] > 0:

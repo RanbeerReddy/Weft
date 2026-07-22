@@ -122,9 +122,10 @@ class CrossEncoderReranker:
 
         Returns:
             List of RetrievalResult objects re-ranked by the cross-encoder.
-            The 'distance' attribute is updated to hold the reranker score (higher is better,
-            so we negate it or document it. For compatibility with MetricsCalculator which expects distance
-            where lower is better, we will store -score in distance).
+            The 'distance' attribute is updated to hold the reranker score (higher is
+            better, so we negate it or document it. For compatibility with
+            MetricsCalculator which expects distance where lower is better, we will
+            store -score in distance).
         """
         if not candidates:
             return []
@@ -144,7 +145,7 @@ class CrossEncoderReranker:
         # Take top_k
         top_candidates = scored_candidates[:top_k]
 
-        # Rebuild RetrievalResult objects with updated rank and "distance" (using -score for sorting compatibility)
+        # Rebuild RetrievalResult objects with updated rank and "distance" (using -score for sorting compatibility)  # noqa: E501
         reranked_results = []
         for new_rank, (candidate, score) in enumerate(top_candidates, start=1):
             reranked_results.append(

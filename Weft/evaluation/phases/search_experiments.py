@@ -15,23 +15,21 @@ NO changes are kept to production code unless benchmark improves.
 
 import argparse
 import json
-import sys
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List
 
 from sentence_transformers import SentenceTransformer
-from sqlalchemy import String, cast, func, select, text
+from sqlalchemy import select, text
 
 from Weft.evaluation.core.memory_metrics import (
     MemoryMetricsCalculator,
-    MemoryQueryMetrics,
     MemoryRetrievalResult,
 )
-from Weft.utils.exceptions import WeftException
 from Weft.storage.database import SessionLocal
 from Weft.storage.models import Chunk, Conversation, Embedding, Message
+from Weft.utils.exceptions import WeftException
 
 MODEL = None
 
@@ -405,7 +403,7 @@ def run_experiments(
         print("EXPERIMENT COMPARISON")
         print("=" * 70)
         print(
-            f"\n  {'Experiment':<40} {'Hit@1':>6} {'Hit@3':>6} {'Hit@5':>6} {'Hit@10':>7} {'MRR':>7}"
+            f"\n  {'Experiment':<40} {'Hit@1':>6} {'Hit@3':>6} {'Hit@5':>6} {'Hit@10':>7} {'MRR':>7}"  # noqa: E501
         )
         print("  " + "-" * 68)
 
@@ -440,7 +438,7 @@ def run_experiments(
                 improvement = best["mrr"] - (baseline_mrr or 0)
                 print(f"  Improvement over baseline: +{improvement:.4f} MRR")
             else:
-                print(f"  No improvement over baseline")
+                print("  No improvement over baseline")
 
     finally:
         db.close()
