@@ -86,7 +86,8 @@ def simulate_chunking(content: str) -> List[str]:
     """Re-run the splitter on the content to see what chunks WOULD be generated."""
     if not content:
         return []
-    return SPLITTER.split_text(content)
+    result: List[str] = SPLITTER.split_text(content)
+    return result
 
 
 def analyze_chunking_for_phrase(  # noqa: C901
@@ -163,15 +164,17 @@ def analyze_chunking_for_phrase(  # noqa: C901
         msg_analysis["stored_chunk_count"] = len(stored_chunks)
 
         stored_containing = []
-        for sc in stored_chunks:
-            contains = MemoryMetricsCalculator.phrase_in_text(phrase, sc["chunk_text"])
+        for stored_chunk in stored_chunks:
+            contains = MemoryMetricsCalculator.phrase_in_text(
+                phrase, stored_chunk["chunk_text"]
+            )
             stored_containing.append(
                 {
-                    "chunk_id": sc["chunk_id"],
-                    "chunk_order": sc["chunk_order"],
+                    "chunk_id": stored_chunk["chunk_id"],
+                    "chunk_order": stored_chunk["chunk_order"],
                     "contains_phrase": contains,
-                    "length": sc["length"],
-                    "preview": sc["chunk_text"][:100],
+                    "length": stored_chunk["length"],
+                    "preview": stored_chunk["chunk_text"][:100],
                 }
             )
 
@@ -199,7 +202,7 @@ def analyze_chunking_for_phrase(  # noqa: C901
             issues.append("MESSAGE_HAS_CONTENT_BUT_NO_CHUNKS")
 
         # Check for very short chunks (< 50 chars) that lack context
-        short_chunks = [s for s in stored_containing if s["length"] < 50]
+        short_chunks = [s for s in stored_containing if int(s["length"]) < 50]
         if short_chunks:
             issues.append(
                 f"SHORT_CHUNKS_LACKING_CONTEXT ({len(short_chunks)} chunks < 50 chars)"

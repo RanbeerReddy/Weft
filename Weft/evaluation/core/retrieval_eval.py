@@ -49,24 +49,23 @@ def load_test_queries(queries_file: Optional[str] = None) -> List[Dict[str, Any]
     Returns:
         List of query dicts with 'query' and 'expected_keywords'.
     """
+    resolved_path: Path
     if queries_file is None:
-        # Default location
-        queries_file = Path(__file__).parent / "test_queries.json"
+        resolved_path = Path(__file__).parent / "test_queries.json"
+    else:
+        resolved_path = Path(queries_file)
 
-    queries_file_path = Path(queries_file)
-
-    if not queries_file_path.exists():
-        print(f"[!] Queries file not found: {queries_file_path}")
+    if not resolved_path.exists():
+        print(f"[!] Queries file not found: {resolved_path}")
         return []
 
     try:
-        with open(queries_file_path, "r", encoding="utf-8") as f:
-            queries = json.load(f)
+        with open(resolved_path, "r", encoding="utf-8") as f:
+            queries: List[Dict[str, Any]] = json.load(f)
         print(f"[+] Loaded {len(queries)} test queries")
         return queries
     except Exception as e:
         raise WeftException(str(e), e) from e
-        return []
 
 
 def evaluate_all_queries(queries: List[Dict[str, Any]]) -> EvaluationSummary:
