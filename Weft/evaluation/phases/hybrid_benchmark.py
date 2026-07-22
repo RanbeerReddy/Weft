@@ -1,7 +1,7 @@
 import json
 import time
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 from Weft.core.retrieval import HybridRetriever, LexicalRetriever, VectorRetriever
 from Weft.evaluation.core.memory_metrics import (
