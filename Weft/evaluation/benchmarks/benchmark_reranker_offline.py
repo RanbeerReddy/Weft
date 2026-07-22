@@ -2,7 +2,7 @@
 
 import json
 import time
-from typing import Any, Dict, List, Tuple, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from Weft.core.retrieval import CrossEncoderReranker
 from Weft.evaluation.core.metrics import MetricsCalculator, RetrievalResult
