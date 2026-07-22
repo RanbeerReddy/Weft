@@ -26,7 +26,7 @@ from Weft.evaluation.core.memory_metrics import MemoryMetricsCalculator
 from Weft.storage.database import SessionLocal
 from Weft.storage.models import Chunk, Conversation, Embedding, Message
 
-MODEL = None
+MODEL: Optional[SentenceTransformer] = None
 
 
 def get_model() -> SentenceTransformer:
@@ -111,14 +111,14 @@ def find_correct_chunk_info(db, phrase: str) -> Optional[Dict[str, Any]]:
 
 
 def run_reranking_preparation(  # noqa: C901
-    memory_queries_path: str = None,
+    memory_queries_path: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Prepare reranking dataset for all benchmark queries."""
     print("=" * 70)
     print("PHASE 7 — RERANKING READINESS")
     print("=" * 70)
 
-    report = {"timestamp": datetime.now().isoformat()}
+    report: Dict[str, Any] = {"timestamp": datetime.now().isoformat()}
 
     # Load queries
     if memory_queries_path is None:

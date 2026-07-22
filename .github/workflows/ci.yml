@@ -2,20 +2,13 @@ name: CI Pipeline
 
 on:
   push:
-    branches:
-      - main
-      - develop
+    branches: [main, develop]
   pull_request:
-    branches:
-      - main
-      - develop
+    branches: [main, develop]
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.11"]
 
     services:
       postgres:
@@ -39,7 +32,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.11"
 
       - name: Cache pip
         uses: actions/cache@v4
@@ -55,28 +48,30 @@ jobs:
           pip install -r requirements.txt
           pip install pytest pytest-cov pytest-asyncio black isort ruff mypy
 
-      - name: Run Linters & Formatters
-        run: |
-          black --check Weft tests
-          isort --check-only Weft tests
-          ruff check Weft tests
-          mypy Weft
+      - name: Black
+        run: black --check Weft tests
+
+      - name: isort
+        run: isort --check-only Weft tests
+
+      - name: Ruff
+        run: ruff check Weft tests
+
+      - name: Mypy
+        run: mypy Weft --no-incremental
 
       - name: Initialize Database Schema (Alembic)
         env:
           TEST_DATABASE_URL: postgresql+psycopg2://weft_user:weft_123@localhost:5432/weft_db
-        run: |
-          alembic upgrade head
+        run: alembic upgrade head
 
       - name: Run Unit Tests
-        run: |
-          pytest tests/ -m unit -v
+        run: pytest tests/ -m unit -v
 
       - name: Run Integration Tests
         env:
           TEST_DATABASE_URL: postgresql+psycopg2://weft_user:weft_123@localhost:5432/weft_db
-        run: |
-          pytest tests/ -m integration -v --cov=Weft --cov-report=term-missing --cov-report=xml
+        run: pytest tests/ -m integration -v --cov=Weft --cov-report=term-missing --cov-report=xml
 
       - name: Upload Coverage Reports
         uses: actions/upload-artifact@v4

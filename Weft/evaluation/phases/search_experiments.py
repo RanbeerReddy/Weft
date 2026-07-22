@@ -18,7 +18,7 @@ import json
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from sentence_transformers import SentenceTransformer
 from sqlalchemy import select, text
@@ -31,7 +31,7 @@ from Weft.storage.database import SessionLocal
 from Weft.storage.models import Chunk, Conversation, Embedding, Message
 from Weft.utils.exceptions import WeftException
 
-MODEL = None
+MODEL: Optional[SentenceTransformer] = None
 
 
 def get_model() -> SentenceTransformer:
@@ -199,7 +199,7 @@ def hybrid_search(
 
 
 def metadata_filtered_search(
-    db, query: str, k: int = 10, role_filter: str = None
+    db, query: str, k: int = 10, role_filter: Optional[str] = None
 ) -> List[MemoryRetrievalResult]:
     """Vector search with metadata pre-filtering.
 
@@ -330,14 +330,14 @@ def evaluate_experiment(
 
 
 def run_experiments(
-    memory_queries_path: str = None,
+    memory_queries_path: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Run all search experiments."""
     print("=" * 70)
     print("PHASE 6 — SEARCH QUALITY EXPERIMENTS")
     print("=" * 70)
 
-    report = {"timestamp": datetime.now().isoformat()}
+    report: Dict[str, Any] = {"timestamp": datetime.now().isoformat()}
 
     # Load queries
     if memory_queries_path is None:

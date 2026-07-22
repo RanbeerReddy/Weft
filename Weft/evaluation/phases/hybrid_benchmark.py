@@ -35,9 +35,10 @@ def convert_to_memory_result(
 
 def evaluate_strategy(
     queries: List[Dict[str, Any]], strategy: str, alpha: float = 0.5
-) -> MemoryEvaluationSummary:
+) -> Tuple[MemoryEvaluationSummary, float]:
     query_metrics = []
 
+    retriever: Any
     if strategy == "semantic":
         retriever = VectorRetriever()
     elif strategy == "lexical":

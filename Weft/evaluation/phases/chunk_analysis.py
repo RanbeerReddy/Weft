@@ -17,7 +17,7 @@ import argparse
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 # Import the splitter to simulate chunk generation
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -90,7 +90,7 @@ def simulate_chunking(content: str) -> List[str]:
 
 
 def analyze_chunking_for_phrase(  # noqa: C901
-    db, phrase: str, query: str, query_type: str = None
+    db, phrase: str, query: str, query_type: Optional[str] = None
 ) -> Dict[str, Any]:
     """Analyze how chunking affects a specific phrase.
 
@@ -103,7 +103,7 @@ def analyze_chunking_for_phrase(  # noqa: C901
     Returns:
         Detailed chunking analysis
     """
-    result = {
+    result: Dict[str, Any] = {
         "query": query,
         "expected_phrase": phrase,
         "query_type": query_type,
@@ -222,7 +222,7 @@ def analyze_chunking_for_phrase(  # noqa: C901
         result["message_analyses"].append(msg_analysis)
 
     # Aggregate issues
-    all_issues = []
+    all_issues: List[str] = []
     for ma in result["message_analyses"]:
         all_issues.extend(ma["issues"])
 
@@ -234,15 +234,15 @@ def analyze_chunking_for_phrase(  # noqa: C901
 
 
 def run_chunk_analysis(  # noqa: C901
-    failure_report_path: str = None,
-    memory_queries_path: str = None,
+    failure_report_path: Optional[str] = None,
+    memory_queries_path: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Run chunk analysis for all relevant queries."""
     print("=" * 70)
     print("PHASE 5 — CHUNK ANALYSIS")
     print("=" * 70)
 
-    report = {"timestamp": datetime.now().isoformat()}
+    report: Dict[str, Any] = {"timestamp": datetime.now().isoformat()}
 
     # Determine which queries to analyze
     queries_to_analyze = []
@@ -277,7 +277,7 @@ def run_chunk_analysis(  # noqa: C901
     db = SessionLocal()
     try:
         analyses = []
-        issue_summary = {}
+        issue_summary: Dict[str, int] = {}
 
         for i, q in enumerate(queries_to_analyze, start=1):
             query_text = q.get("query", "")

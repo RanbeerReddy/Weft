@@ -54,8 +54,9 @@ def search_memories(query: str):
                 for row in results:
                     msg = db.get(Message, row.message_id)
                     if msg:
+                        content_snippet = (msg.content or "")[:100]
                         print(
-                            f" - [Message {msg.id}] (Dist: {row.dist:.4f}): {msg.content[:100]}..."  # noqa: E501
+                            f" - [Message {msg.id}] (Dist: {row.dist:.4f}): {content_snippet}..."  # noqa: E501
                         )
             else:
                 print(" - No semantic chunks found. (Have embeddings been created?)")

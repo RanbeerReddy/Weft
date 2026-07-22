@@ -17,7 +17,7 @@ import sys
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Optional
 
 from sentence_transformers import SentenceTransformer
 from sqlalchemy import select
@@ -33,7 +33,7 @@ from Weft.storage.models import Chunk, Conversation, Embedding, Message
 from Weft.utils.exceptions import WeftException
 
 # Model loaded at module level
-MODEL = None
+MODEL: Optional[SentenceTransformer] = None
 
 
 def get_model() -> SentenceTransformer:
@@ -127,7 +127,7 @@ def retrieve_top_50_with_metadata(query: str) -> List[MemoryRetrievalResult]:
         db.close()
 
 
-def load_memory_queries(queries_file: str = None) -> List[Dict[str, Any]]:
+def load_memory_queries(queries_file: Optional[str] = None) -> List[Dict[str, Any]]:
     """Load memory queries from JSON file.
 
     Args:
@@ -139,14 +139,14 @@ def load_memory_queries(queries_file: str = None) -> List[Dict[str, Any]]:
     if queries_file is None:
         queries_file = Path(__file__).parent / "memory_queries.json"
 
-    queries_file = Path(queries_file)
+    queries_file_path = Path(queries_file)
 
-    if not queries_file.exists():
-        print(f"[!] Queries file not found: {queries_file}")
+    if not queries_file_path.exists():
+        print(f"[!] Queries file not found: {queries_file_path}")
         return []
 
     try:
-        with open(queries_file, "r", encoding="utf-8") as f:
+        with open(queries_file_path, "r", encoding="utf-8") as f:
             queries = json.load(f)
         print(f"[+] Loaded {len(queries)} memory queries")
         return queries

@@ -25,7 +25,7 @@ from sqlalchemy import func, select
 from Weft.storage.database import SessionLocal
 from Weft.storage.models import Chunk, Conversation, Embedding
 
-MODEL = None
+MODEL: Optional[SentenceTransformer] = None
 
 
 def get_model() -> SentenceTransformer:
@@ -98,7 +98,7 @@ def get_top_k_with_embeddings(db, query_vector: List[float], k: int = 10):
 
 
 def analyze_embedding_for_query(
-    db, query: str, expected_phrase: str, query_type: str = None
+    db, query: str, expected_phrase: str, query_type: Optional[str] = None
 ) -> Dict[str, Any]:
     """Analyze embedding quality for a specific query.
 
@@ -106,7 +106,7 @@ def analyze_embedding_for_query(
         Dict with distance comparisons and diagnosis
     """
     model = get_model()
-    result = {
+    result: Dict[str, Any] = {
         "query": query,
         "expected_phrase": expected_phrase,
         "query_type": query_type,
@@ -131,7 +131,7 @@ def analyze_embedding_for_query(
         emb = get_chunk_embedding(db, cc["chunk_id"])
         if emb is not None:
             emb_array = np.array(emb)
-            sim = cosine_similarity(query_vector, emb_array)
+            sim = cosine_similarity(np.asarray(query_vector), emb_array)
             dist = 1.0 - sim  # cosine distance
             correct_similarities.append(
                 {
@@ -162,7 +162,7 @@ def analyze_embedding_for_query(
     if top_results:
         top1 = top_results[0]
         top1_emb = np.array(list(top1.embedding_vector))
-        top1_sim = cosine_similarity(query_vector, top1_emb)
+        top1_sim = cosine_similarity(np.asarray(query_vector), top1_emb)
 
         result["top_1"] = {
             "distance": round(float(top1.distance), 6),
@@ -208,15 +208,15 @@ def analyze_embedding_for_query(
 
 
 def run_embedding_analysis(  # noqa: C901
-    failure_report_path: str = None,
-    memory_queries_path: str = None,
+    failure_report_path: Optional[str] = None,
+    memory_queries_path: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Run embedding analysis for all failed queries where data exists."""
     print("=" * 70)
     print("PHASE 4 — EMBEDDING ANALYSIS")
     print("=" * 70)
 
-    report = {"timestamp": datetime.now().isoformat()}
+    report: Dict[str, Any] = {"timestamp": datetime.now().isoformat()}
 
     # Load failure analysis to identify B and C failures
     if failure_report_path is None:
@@ -252,7 +252,7 @@ def run_embedding_analysis(  # noqa: C901
     db = SessionLocal()
     try:
         analyses = []
-        diagnosis_counts = {}
+        diagnosis_counts: Dict[str, int] = {}
 
         for i, q in enumerate(queries_to_analyze, start=1):
             query_text = q.get("query", "")

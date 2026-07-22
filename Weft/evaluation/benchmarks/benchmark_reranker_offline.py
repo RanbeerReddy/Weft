@@ -2,7 +2,7 @@
 
 import json
 import time
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Optional
 
 from Weft.core.retrieval import CrossEncoderReranker
 from Weft.evaluation.core.metrics import MetricsCalculator, RetrievalResult
@@ -11,7 +11,7 @@ from Weft.utils.exceptions import WeftException
 
 def evaluate_system(
     dataset: List[Dict[str, Any]],
-    reranker: CrossEncoderReranker = None,
+    reranker: Optional[CrossEncoderReranker] = None,
     name: str = "Baseline",
 ) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
     """Evaluate over queries."""

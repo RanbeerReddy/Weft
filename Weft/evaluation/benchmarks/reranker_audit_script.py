@@ -2,7 +2,7 @@
 
 import json
 import time
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 from Weft.core.retrieval import CrossEncoderReranker
 from Weft.evaluation.core.metrics import MetricsCalculator, RetrievalResult
@@ -11,9 +11,9 @@ from Weft.utils.exceptions import WeftException
 
 def evaluate_with_reranker(
     dataset: List[Dict[str, Any]], reranker: CrossEncoderReranker, top_n: int
-) -> dict:
+) -> Tuple[Dict[str, float], List[Dict[str, Any]]]:
     """Evaluate reranker on exactly top_n candidates."""
-    results = []
+    results: List[Dict[str, Any]] = []
     latencies = []
 
     for item in dataset:

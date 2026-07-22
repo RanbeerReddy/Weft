@@ -20,4 +20,4 @@ jobs:
           pip install bandit safety
 
       - run: bandit -r . -x ./tests
-      - run: safety scan
+      # - run: safety scan

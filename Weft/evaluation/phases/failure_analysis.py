@@ -25,7 +25,7 @@ import argparse
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from sentence_transformers import SentenceTransformer
 from sqlalchemy import func, select
@@ -34,7 +34,7 @@ from Weft.evaluation.core.memory_metrics import MemoryMetricsCalculator
 from Weft.storage.database import SessionLocal
 from Weft.storage.models import Chunk, Conversation, Embedding, Message
 
-MODEL = None
+MODEL: Optional[SentenceTransformer] = None
 
 
 def get_model() -> SentenceTransformer:
@@ -51,7 +51,7 @@ def phrase_exists_in_db(db, phrase: str) -> bool:
         func.lower(Chunk.chunk_text).contains(phrase.lower())
     )
     count = db.scalar(stmt)
-    return count > 0
+    return bool(count and count > 0)
 
 
 def retrieve_top_k(db, query: str, k: int = 100) -> List[Dict[str, Any]]:
@@ -94,7 +94,7 @@ def retrieve_top_k(db, query: str, k: int = 100) -> List[Dict[str, Any]]:
 
 
 def classify_failure(
-    db, query: str, expected_phrase: str, query_type: str = None
+    db, query: str, expected_phrase: str, query_type: Optional[str] = None
 ) -> Dict[str, Any]:
     """Classify a query failure into category A, B, C, or D.
 
@@ -107,7 +107,7 @@ def classify_failure(
     Returns:
         Classification result dict
     """
-    result = {
+    result: Dict[str, Any] = {
         "query": query,
         "expected_phrase": expected_phrase,
         "query_type": query_type,
@@ -199,15 +199,15 @@ def classify_failure(
 
 
 def run_failure_analysis(
-    memory_queries_path: str = None,
-    eval_results_path: str = None,
+    memory_queries_path: Optional[str] = None,
+    eval_results_path: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Run failure analysis on all benchmark queries."""
     print("=" * 70)
     print("PHASE 3 — RETRIEVAL FAILURE ANALYSIS")
     print("=" * 70)
 
-    report = {"timestamp": datetime.now().isoformat()}
+    report: Dict[str, Any] = {"timestamp": datetime.now().isoformat()}
 
     # Load memory queries
     if memory_queries_path is None:

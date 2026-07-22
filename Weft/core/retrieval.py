@@ -298,7 +298,7 @@ class HybridRetriever:
         else:
             raise ValueError(f"Unknown fusion strategy: {fusion_strategy}")
 
-    def _rrf_fusion(self, vec_results, lex_results, k=10, rrf_k=60):
+    def _rrf_fusion(self, vec_results, lex_results, k=10, rrf_k=60) -> List[RetrievalResult]:
         scores = {}
         chunks = {}
 
@@ -340,7 +340,7 @@ class HybridRetriever:
 
         return final_results
 
-    def _linear_fusion(self, vec_results, lex_results, alpha=0.5, k=10):
+    def _linear_fusion(self, vec_results, lex_results, alpha=0.5, k=10) -> List[RetrievalResult]:
         scores = {}
         chunks = {}
 
