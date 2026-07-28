@@ -1,8 +1,16 @@
 [tool.poetry]
 name = "weft"
-version = "0.1.0"
-description = "Turning ChatGPT conversations into a searchable, structured second brain."
+version = "1.0.0"
+description = "Turn exported ChatGPT conversations into a searchable, local-first knowledge base."
 authors = ["Ranbeer Reddy <you@example.com>"]
+readme = "README.md"
+packages = [{ include = "Weft" }]
+
+[tool.poetry.dependencies]
+python = ">=3.11,<3.13"
+
+[tool.poetry.scripts]
+weft = "Weft.cli:app"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
