@@ -1,263 +1,112 @@
-````md
 # Weft
 
-> Turning ChatGPT conversations into a searchable, structured second brain.
+Weft is an open-source Python project for turning exported ChatGPT conversations into a searchable, local-first knowledge base.
 
-## What is this?
+## What is Weft?
 
-Weft is an open-source system for reconstructing, organizing, and understanding exported ChatGPT conversations.
+Weft helps you preserve and reuse the knowledge contained in long-running AI conversations. Instead of letting chats disappear into a history tab, Weft reconstructs conversations, stores them locally, and makes them searchable through a lightweight retrieval pipeline.
 
-The goal is not just to store chats.
+## Features
 
-The goal is to transform thousands of scattered AI conversations into:
-- a knowledge graph
-- a research archive
-- a personal context engine
-- a second brain
-- and eventually an AI memory system
+- Extract and parse ChatGPT export archives.
+- Reconstruct conversation trees into markdown-friendly vault output.
+- Store conversations, messages, chunks, and embeddings in PostgreSQL with pgvector.
+- Search the indexed corpus with semantic, lexical, or hybrid retrieval.
+- Run built-in benchmark and evaluation workflows.
 
-Instead of conversations dying inside chat windows, Weft tries to make them:
-- searchable
-- interconnected
-- reusable
-- analyzable
-- and useful for long-term thinking.
+## Architecture overview
 
----
+Weft follows a simple pipeline:
 
-# Why I’m Building This
+1. Ingest a ChatGPT export archive.
+2. Reconstruct conversations into local markdown output.
+3. Import conversation data into PostgreSQL.
+4. Split message text into chunks and generate embeddings.
+5. Search, benchmark, and evaluate the resulting index.
 
-Every serious AI user eventually hits the same problem:
+A fuller overview is available in [docs/architecture.md](docs/architecture.md).
 
-- thousands of conversations
-- buried ideas
-- forgotten insights
-- repeated questions
-- no structure
-- no continuity
+## Installation
 
-ChatGPT remembers almost nothing across time.
+### Requirements
 
-Humans don’t either.
-
-So the idea is:
-
-> What if conversations could become persistent knowledge?
-
-Not bookmarks.
-
-Not notes.
-
-Actual evolving context.
-
----
-
-# Vision
-
-Weft aims to become a system that can:
-
-- Parse exported ChatGPT conversations
-- Reconstruct conversation trees
-- Extract ideas, topics, projects, and entities
-- Build semantic search over conversations
-- Connect related thoughts automatically
-- Generate knowledge graphs
-- Create long-term AI memory
-- Integrate with Obsidian and local knowledge systems
-- Enable AI-assisted reflection and research
-
-Eventually:
-
-- AI agents that understand your history
-- Context-aware assistants
-- Personalized reasoning systems
-- Self-organizing research archives
-
----
-
-# Core Idea
-
-Chat logs are not just messages.
-
-They are:
-- thinking traces
-- learning history
-- project evolution
-- research logs
-- decision timelines
-- idea graphs
-
-Weft treats conversations like structured knowledge instead of disposable text.
-
----
-
-# Current Features
-
-## Parsing ChatGPT Export Data
-- Reads exported `conversations-000.json`
-- Reconstructs branching conversations
-- Preserves message hierarchy and metadata
-
-## Obsidian Integration
-- Converts chats into markdown
-- Builds vault-ready structures
-- Enables backlinking and note navigation
-
-## Conversation Reconstruction
-- Restores message flow from node mappings
-- Creates readable timelines
-- Preserves assistant/user roles
-
-## Local Knowledge Storage
-- Fully local-first workflow
-- Your data stays yours
-- No dependency on cloud vector DBs
-
----
-
-# Planned Features
-
-## Semantic Search
-Find ideas instead of keywords.
-
-## Embedding Pipelines
-Vectorize conversations for contextual retrieval.
-
-## Knowledge Graphs
-Automatically connect:
-- projects
-- concepts
-- people
-- research topics
-- recurring patterns
-
-## AI Context Engine
-Provide historical context to local LLMs and agents.
-
-## Memory Compression
-Summarize years of conversations into reusable knowledge.
-
-## Multi-Source Integration
-Future support for:
-- Claude exports
-- Gemini chats
-- emails
-- notes
-- PDFs
-- research papers
-
----
-
-# Tech Stack
-
-## Backend
 - Python 3.11
-- FastAPI
+- PostgreSQL with the pgvector extension
+- Docker (recommended for local development)
 
-## Data Processing
-- Pandas
-- Pydantic
-- NetworkX
-
-## NLP / AI
-- Sentence Transformers
-- FAISS / ChromaDB
-- LangChain (possibly)
-- local embeddings
-
-## Frontend (planned)
-- React
-- TypeScript
-
-## Knowledge Layer
-- Obsidian
-- Markdown
-- Graph-based linking
-
----
-
-# Philosophy
-
-Weft is built around a few ideas:
-
-### AI conversations are valuable data
-Most people waste them.
-
-### Knowledge should compound
-Ideas should connect over time.
-
-### AI should enhance thinking
-Not replace it.
-
-### Local-first matters
-Your thoughts should belong to you.
-
-### Context is everything
-Intelligence without memory is shallow.
-
----
-
-# Long-Term Goal
-
-The long-term goal is to build something between:
-- a second brain
-- a research operating system
-- and a persistent AI memory layer
-
-A system where:
-- your ideas evolve over years
-- AI understands your projects
-- context accumulates instead of disappearing
-
----
-
-# Current Status
-
-Early-stage experimental project.
-
-Right now the focus is:
-1. understanding ChatGPT export structure
-2. reconstructing conversations correctly
-3. building clean markdown pipelines
-4. designing scalable architecture
-5. preparing for semantic retrieval and AI memory systems
-
----
-
-# Example Workflow
+### Quick start
 
 ```bash
-Export ChatGPT data
-        ↓
-Parse conversation JSON files
-        ↓
-Reconstruct conversation trees
-        ↓
-Convert to markdown
-        ↓
-Store in Obsidian
-        ↓
-Generate embeddings
-        ↓
-Semantic search + knowledge graph
-        ↓
-AI memory/context engine
-````
+python -m venv .venv
+source .venv/bin/activate  # On Windows use .venv\Scripts\activate
+pip install -r requirements.txt
+cp .env.example .env
+```
 
----
+### Start PostgreSQL
 
-# Project Goals
+```bash
+docker compose up -d postgres
+```
 
-* Build something genuinely useful
-* Learn deeply instead of tutorial-copying
-* Understand AI memory systems
-* Explore knowledge engineering
-* Create infrastructure for future AI agents
-* Open-source the entire process
+### Initialize the database
 
----
+```bash
+alembic upgrade head
+```
 
-# Inspiration
+## CLI usage
+
+Weft now exposes a Typer-based CLI:
+
+```bash
+weft init
+weft ingest Data/Raw\ Data/reddyranbeer\ openAI\ Data.zip
+weft embed
+weft search "what learning strategies do I use"
+weft benchmark
+weft evaluate
+weft stats
+```
+
+### Search example
+
+```bash
+weft search "tell me about the Weft project"
+```
+
+### Benchmark example
+
+```bash
+weft benchmark
+```
+
+## Project structure
+
+- [Weft/core](Weft/core) — ingestion and reconstruction logic.
+- [Weft/storage](Weft/storage) — database models, chunking, embeddings, and search helpers.
+- [Weft/evaluation](Weft/evaluation) — benchmark and evaluation workflows.
+- [docs](docs) — user and contributor documentation.
+- [tests](tests) — unit and integration coverage.
+
+## Roadmap
+
+- Improve retrieval quality and benchmark coverage.
+- Harden ingestion against more export variants.
+- Continue polishing the local-first memory workflow.
+
+## Limitations
+
+Weft is a strong first release for a local knowledge workflow, but it is not intended to be a production-grade search engine or a complete agent platform. The current release emphasizes simplicity, transparency, and reproducibility.
+
+## Documentation
+
+- [docs/architecture.md](docs/architecture.md)
+- [docs/database.md](docs/database.md)
+- [docs/retrieval.md](docs/retrieval.md)
+- [docs/benchmarks.md](docs/benchmarks.md)
+- [docs/memory_engine.md](docs/memory_engine.md)
+- [docs/development.md](docs/development.md)
 
 Inspired by:
 
