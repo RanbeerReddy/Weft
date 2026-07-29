@@ -1,0 +1,12 @@
+would reformat D:\pojects\Weft\Weft\config\settings.py
+would reformat D:\pojects\Weft\Weft\storage\create_chunks.py
+would reformat D:\pojects\Weft\Weft\storage\search_memories.py
+would reformat D:\pojects\Weft\Weft\cli.py
+would reformat D:\pojects\Weft\Weft\evaluation\benchmarks\benchmark_reranker.py
+would reformat D:\pojects\Weft\Weft\evaluation\benchmarks\benchmark_reranker_offline.py
+would reformat D:\pojects\Weft\Weft\evaluation\phases\failure_analysis.py
+would reformat D:\pojects\Weft\Weft\evaluation\phases\embedding_analysis.py
+
+Oh no! ≡ƒÆÑ ≡ƒÆö ≡ƒÆÑ
+8 files would be reformatted, 41 files would be left unchanged.
+ERROR conda.cli.main_run:execute(142): `conda run black --check Weft tests` failed. (See above for error)

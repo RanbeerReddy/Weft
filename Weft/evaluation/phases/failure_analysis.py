@@ -30,9 +30,11 @@ from typing import Any, Dict, List, Optional
 from sentence_transformers import SentenceTransformer
 from sqlalchemy import func, select
 
+from Weft.config.settings import settings
 from Weft.evaluation.core.memory_metrics import MemoryMetricsCalculator
 from Weft.storage.database import SessionLocal
 from Weft.storage.models import Chunk, Conversation, Embedding, Message
+from Weft.utils.logger import logger
 
 MODEL: Optional[SentenceTransformer] = None
 
@@ -40,8 +42,8 @@ MODEL: Optional[SentenceTransformer] = None
 def get_model() -> SentenceTransformer:
     global MODEL
     if MODEL is None:
-        print("[*] Loading embedding model: BAAI/bge-small-en-v1.5")
-        MODEL = SentenceTransformer("BAAI/bge-small-en-v1.5")
+        logger.info("[*] Loading embedding model: BAAI/bge-small-en-v1.5")
+        MODEL = SentenceTransformer(settings.EMBEDDING_MODEL)
     return MODEL
 
 
@@ -229,9 +231,11 @@ def run_failure_analysis(
         for pq in eval_data.get("per_query", []):
             if not pq.get("memory_hit_at_10", False):
                 failed_queries.add(pq["query"])
-        print(f"[+] Identified {len(failed_queries)} failed queries from previous eval")
+        logger.info(
+            f"[+] Identified {len(failed_queries)} failed queries from previous eval"
+        )
     else:
-        print("[!] No previous eval results found — analyzing ALL queries")
+        logger.warning("[!] No previous eval results found — analyzing ALL queries")
         failed_queries = {q["query"] for q in queries}
 
     db = SessionLocal()

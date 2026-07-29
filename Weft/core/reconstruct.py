@@ -1,5 +1,4 @@
 def reconstruct_conversation(conversation):
-
     mapping = conversation["mapping"]
 
     current = conversation["current_node"]
@@ -7,7 +6,6 @@ def reconstruct_conversation(conversation):
     path = []
 
     while current:
-
         node = mapping.get(current)
 
         if not node:

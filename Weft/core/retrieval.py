@@ -10,17 +10,19 @@ from sentence_transformers import CrossEncoder, SentenceTransformer
 from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
+from Weft.config.settings import settings
 from Weft.evaluation.core.metrics import RetrievalResult
 from Weft.storage.database import SessionLocal
 from Weft.storage.models import Chunk, Conversation, Embedding, Message
 from Weft.utils.exceptions import WeftException
+from Weft.utils.logger import logger
 
 
 class VectorRetriever:
     """Handles top-k vector retrieval using pgvector."""
 
-    def __init__(self, model_name: str = "BAAI/bge-small-en-v1.5"):
-        print(f"[*] Loading embedding model: {model_name}")
+    def __init__(self, model_name: str = settings.EMBEDDING_MODEL):
+        logger.info(f"Loading embedding model: {model_name}")
         self.model = SentenceTransformer(model_name)
 
     def retrieve(
@@ -106,8 +108,8 @@ class VectorRetriever:
 class CrossEncoderReranker:
     """Handles cross-encoder reranking of candidate chunks."""
 
-    def __init__(self, model_name: str = "BAAI/bge-reranker-base"):
-        print(f"[*] Loading cross-encoder model: {model_name}")
+    def __init__(self, model_name: str = settings.RERANKER_MODEL):
+        logger.info(f"Loading cross-encoder model: {model_name}")
         self.model = CrossEncoder(model_name, max_length=512)
 
     def rerank(
@@ -131,7 +133,7 @@ class CrossEncoderReranker:
             return []
 
         # Format input for cross-encoder as list of (query, document) pairs
-        pairs = [[query, candidate.chunk_text] for candidate in candidates]
+        pairs = [(query, candidate.chunk_text) for candidate in candidates]
 
         # Predict scores (returns logits)
         scores = self.model.predict(pairs, batch_size=32)

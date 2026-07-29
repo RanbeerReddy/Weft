@@ -1,45 +1,47 @@
 from sentence_transformers import SentenceTransformer
 from sqlalchemy import delete, select
 
+from Weft.config.settings import settings
 from Weft.storage.database import SessionLocal
 from Weft.storage.models import Chunk, Embedding
 from Weft.utils.exceptions import WeftException
+from Weft.utils.logger import logger
 
-model = SentenceTransformer("BAAI/bge-small-en-v1.5")
+model = SentenceTransformer(settings.EMBEDDING_MODEL)
 
 
 def clear_embeddings():
-    print("Connecting to database...")
+    logger.info("Connecting to database...")
     db = SessionLocal()
     try:
-        print("Deleting all embeddings...")
+        logger.info("Deleting all embeddings...")
         db.execute(delete(Embedding))
         db.commit()
-        print("All embeddings have been deleted.")
+        logger.info("All embeddings have been deleted.")
     except Exception as e:
+        logger.error(f"Failed to delete embeddings: {str(e)}")
         raise WeftException(str(e), e) from e
-        print(f"[ERROR] Failed to delete embeddings: {str(e)}")
     finally:
         db.close()
-        print("Database session closed.")
+        logger.info("Database session closed.")
 
 
 def create_embeddings():
-    print("Connecting to database...")
+    logger.info("Connecting to database...")
     db = SessionLocal()
     try:
-        print("Fetching chunks from database...")
+        logger.info("Fetching chunks from database...")
         chunks = db.scalars(select(Chunk)).all()
 
-        print(f"Found {len(chunks)} chunks to process.")
+        logger.info(f"Found {len(chunks)} chunks to process.")
         if not chunks:
-            print("Stopping: No chunks found in the database. Add chunks first!")
+            logger.info("Stopping: No chunks found in the database. Add chunks first!")
             return
 
-        print("Starting embedding generation (this might take a moment)...")
+        logger.info("Starting embedding generation (this might take a moment)...")
         for i, chunk in enumerate(chunks, 1):
             # Diagnostic progress counter
-            print(f"Encoding chunk {i}/{len(chunks)} (ID: {chunk.id})...", end="\r")
+            logger.info(f"Encoding chunk {i}/{len(chunks)} (ID: {chunk.id})...")
 
             embedding_vector = model.encode(
                 chunk.chunk_text, normalize_embeddings=True
@@ -53,14 +55,14 @@ def create_embeddings():
             )
             db.add(embedding)
         db.commit()
-        print(f"\nSuccessfully created embeddings for {len(chunks)} chunks.")
+        logger.info(f"Successfully created embeddings for {len(chunks)} chunks.")
 
     except WeftException as e:
         db.rollback()
-        print(f"\n[CRITICAL ERROR] Execution failed: {str(e)}")
+        logger.error(f"Execution failed: {str(e)}")
     finally:
         db.close()
-        print("Database session closed.")
+        logger.info("Database session closed.")
 
 
 if __name__ == "__main__":

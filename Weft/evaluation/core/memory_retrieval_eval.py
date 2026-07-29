@@ -22,6 +22,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from sentence_transformers import SentenceTransformer
 from sqlalchemy import select
 
+from Weft.config.settings import settings
 from Weft.evaluation.core.memory_metrics import (
     MemoryEvaluationSummary,
     MemoryMetricsCalculator,
@@ -31,6 +32,7 @@ from Weft.evaluation.core.memory_metrics import (
 from Weft.storage.database import SessionLocal
 from Weft.storage.models import Chunk, Conversation, Embedding, Message
 from Weft.utils.exceptions import WeftException
+from Weft.utils.logger import logger
 
 # Model loaded at module level
 MODEL: Optional[SentenceTransformer] = None
@@ -40,8 +42,8 @@ def get_model() -> SentenceTransformer:
     """Lazily load embedding model."""
     global MODEL
     if MODEL is None:
-        print("[*] Loading embedding model: BAAI/bge-small-en-v1.5")
-        MODEL = SentenceTransformer("BAAI/bge-small-en-v1.5")
+        logger.info(f"Loading embedding model: {settings.EMBEDDING_MODEL}")
+        MODEL = SentenceTransformer(settings.EMBEDDING_MODEL)
     return MODEL
 
 
@@ -122,7 +124,6 @@ def retrieve_top_50_with_metadata(query: str) -> List[MemoryRetrievalResult]:
 
     except Exception as e:
         raise WeftException(str(e), e) from e
-        return []
     finally:
         db.close()
 
@@ -143,13 +144,13 @@ def load_memory_queries(queries_file: Optional[str] = None) -> List[Dict[str, An
         resolved_path = Path(queries_file)
 
     if not resolved_path.exists():
-        print(f"[!] Queries file not found: {resolved_path}")
+        logger.error(f"Queries file not found: {resolved_path}")
         return []
 
     try:
         with open(resolved_path, "r", encoding="utf-8") as f:
             queries: List[Dict[str, Any]] = json.load(f)
-        print(f"[+] Loaded {len(queries)} memory queries")
+        logger.info(f"Loaded {len(queries)} memory queries")
         return queries
     except Exception as e:
         raise WeftException(str(e), e) from e
@@ -177,12 +178,10 @@ def evaluate_all_memory_queries(
         query_type = query_dict.get("query_type")
 
         if not query_text or not expected_phrase:
-            print(f"[!] Query {i}: missing 'query' or 'expected_phrase'")
+            logger.warning(f"Query {i}: missing 'query' or 'expected_phrase'")
             continue
 
-        print(
-            f"[{i}/{len(queries)}] {query_text[:60]}... → expecting: {expected_phrase}"
-        )
+        logger.info(f"[{i}/{len(queries)}] Evaluating: {query_text[:60]}...")
 
         # STEP 5: Retrieve with metadata
         retrieved = retrieve_top_50_with_metadata(query_text)
@@ -315,27 +314,27 @@ def format_memory_report(  # noqa: C901
     # Summary metrics
     lines.append("\nMEMORY HIT RATES:")
     lines.append(
-        f"  Hit@1:  {summary.memory_hit_at_1_rate*100:5.1f}%  ({summary.queries_with_hits_at_1}/{summary.total_queries})"  # noqa: E501
+        f"  Hit@1:  {summary.memory_hit_at_1_rate * 100:5.1f}%  ({summary.queries_with_hits_at_1}/{summary.total_queries})"  # noqa: E501
     )
     lines.append(
-        f"  Hit@3:  {summary.memory_hit_at_3_rate*100:5.1f}%  ({summary.queries_with_hits_at_3}/{summary.total_queries})"  # noqa: E501
+        f"  Hit@3:  {summary.memory_hit_at_3_rate * 100:5.1f}%  ({summary.queries_with_hits_at_3}/{summary.total_queries})"  # noqa: E501
     )
     lines.append(
-        f"  Hit@5:  {summary.memory_hit_at_5_rate*100:5.1f}%  ({summary.queries_with_hits_at_5}/{summary.total_queries})"  # noqa: E501
+        f"  Hit@5:  {summary.memory_hit_at_5_rate * 100:5.1f}%  ({summary.queries_with_hits_at_5}/{summary.total_queries})"  # noqa: E501
     )
     lines.append(
-        f"  Hit@10: {summary.memory_hit_at_10_rate*100:5.1f}%  ({summary.queries_with_hits_at_10}/{summary.total_queries})"  # noqa: E501
+        f"  Hit@10: {summary.memory_hit_at_10_rate * 100:5.1f}%  ({summary.queries_with_hits_at_10}/{summary.total_queries})"  # noqa: E501
     )
 
     lines.append("\nCANDIDATE RECALL (phrase found anywhere in range):")
     lines.append(
-        f"  Recall@10: {summary.candidate_recall_at_10_rate*100:5.1f}%  ({summary.queries_with_candidate_recall_at_10}/{summary.total_queries})"  # noqa: E501
+        f"  Recall@10: {summary.candidate_recall_at_10_rate * 100:5.1f}%  ({summary.queries_with_candidate_recall_at_10}/{summary.total_queries})"  # noqa: E501
     )
     lines.append(
-        f"  Recall@20: {summary.candidate_recall_at_20_rate*100:5.1f}%  ({summary.queries_with_candidate_recall_at_20}/{summary.total_queries})"  # noqa: E501
+        f"  Recall@20: {summary.candidate_recall_at_20_rate * 100:5.1f}%  ({summary.queries_with_candidate_recall_at_20}/{summary.total_queries})"  # noqa: E501
     )
     lines.append(
-        f"  Recall@50: {summary.candidate_recall_at_50_rate*100:5.1f}%  ({summary.queries_with_candidate_recall_at_50}/{summary.total_queries})"  # noqa: E501
+        f"  Recall@50: {summary.candidate_recall_at_50_rate * 100:5.1f}%  ({summary.queries_with_candidate_recall_at_50}/{summary.total_queries})"  # noqa: E501
     )
 
     lines.append(f"\nMEAN RECIPROCAL RANK (MRR): {summary.avg_phrase_mrr:.4f}")
@@ -475,19 +474,19 @@ def main():
     # Load queries
     queries = load_memory_queries(args.queries)
     if not queries:
-        print("[!] No queries loaded, exiting")
+        logger.warning("No queries loaded, exiting")
         sys.exit(1)
 
     # Evaluate
-    print("\n[*] Starting memory retrieval evaluation...")
-    t0 = time.time()
+    logger.info("Starting memory retrieval evaluation...")
+    start_time = time.time()
 
     summary, reranking_candidates = evaluate_all_memory_queries(
         queries, verbose=args.verbose
     )
 
-    elapsed = time.time() - t0
-    print(f"\n[+] Evaluation complete in {elapsed:.2f}s")
+    elapsed = time.time() - start_time
+    logger.info(f"Evaluation complete in {elapsed:.2f}s")
 
     # Print report
     report = format_memory_report(summary, verbose=args.verbose)
@@ -500,8 +499,8 @@ def main():
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
         with open(output_path, "w", encoding="utf-8") as f:
-            json.dump(json_report, f, indent=2)
-        print(f"\n[+] JSON report saved to {output_path}")
+            json.dump(json_report, f, indent=2, default=str)
+        logger.info(f"JSON report saved to {output_path}")
 
     # Save reranking candidates if requested (or default location)
     reranking_path = args.reranking_output or "reranking_candidates.json"
@@ -509,8 +508,8 @@ def main():
     reranking_path.parent.mkdir(parents=True, exist_ok=True)
 
     with open(reranking_path, "w", encoding="utf-8") as f:
-        json.dump(reranking_candidates, f, indent=2)
-    print(f"[+] Reranking candidates saved to {reranking_path}")
+        json.dump(reranking_candidates, f, indent=2, default=str)
+    logger.info(f"Reranking candidates saved to {reranking_path}")
 
 
 if __name__ == "__main__":

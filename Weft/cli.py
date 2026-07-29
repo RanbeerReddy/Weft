@@ -2,20 +2,21 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Optional
 
 import typer
 
 from Weft.config.settings import settings
 from Weft.core.Extract_data import extract_data_from_zip
 from Weft.core.reconstructing_chats import main as reconstruct_main
-from Weft.core.retrieval import HybridRetriever, RetrievalPipeline, VectorRetriever
+from Weft.core.retrieval import RetrievalPipeline
 from Weft.storage.create_chunks import build_chunks
 from Weft.storage.create_convo_msg import parse_export
 from Weft.storage.create_embedding import clear_embeddings, create_embeddings
-from Weft.utils.logger import logger
 
-app = typer.Typer(add_completion=False, help="Weft CLI for ingestion, indexing, search, and evaluation.")
+app = typer.Typer(
+    add_completion=False,
+    help="Weft CLI for ingestion, indexing, search, and evaluation.",
+)
 
 
 @app.command()
@@ -26,7 +27,24 @@ def init() -> None:
         typer.echo(".env already exists; leaving it unchanged.")
         return
 
-    template = """# Database config\nDATABASE_URL=postgresql+psycopg2://weft_user:weft_123@localhost:5432/weft_db\n\n# Model config\nEMBEDDING_MODEL=BAAI/bge-small-en-v1.5\nRERANKER_MODEL=BAAI/bge-reranker-base\n\n# Chunking config\nCHUNK_SIZE=1000\nCHUNK_OVERLAP=150\n\n# Data paths\nRAW_DATA_ZIP=Data/Raw Data/reddyranbeer openAI Data.zip\nEXTRACTED_DATA_DIR=Data/Extracted Data/\nMERGED_CONVERSATIONS_FILE=conversations.json\nVAULT_DIR=vault/conversations\n"""
+    template = """
+# Database config
+DATABASE_URL=postgresql+psycopg2://weft_user:weft_123@localhost:5432/weft_db
+
+# Model config
+EMBEDDING_MODEL=BAAI/bge-small-en-v1.5
+RERANKER_MODEL=BAAI/bge-reranker-base
+
+# Chunking config
+CHUNK_SIZE=1000
+CHUNK_OVERLAP=150
+
+# Data paths
+RAW_DATA_ZIP=Data/Raw Data/reddyranbeer openAI Data.zip
+EXTRACTD_DATA_DIR=Data/Extracted Data/
+MERGED_CONVERSATIONS_FILE=conversations.json
+VAULT_DIR=vault/conversations
+"""
     env_path.write_text(template, encoding="utf-8")
     typer.echo(f"Created {env_path} with sensible defaults.")
 
@@ -55,7 +73,11 @@ def ingest(chat_export: Path) -> None:
 
 
 @app.command()
-def embed(clear: bool = typer.Option(False, "--clear", help="Clear existing embeddings before generating new ones.")) -> None:
+def embed(
+    clear: bool = typer.Option(
+        False, "--clear", help="Clear existing embeddings before generating new ones."
+    ),
+) -> None:
     """Generate embeddings for the existing chunk corpus."""
     if clear:
         clear_embeddings()
@@ -63,7 +85,10 @@ def embed(clear: bool = typer.Option(False, "--clear", help="Clear existing embe
 
 
 @app.command()
-def search(query: str, top_k: int = typer.Option(5, "--top-k", help="Number of results to display.")) -> None:
+def search(
+    query: str,
+    top_k: int = typer.Option(5, "--top-k", help="Number of results to display."),
+) -> None:
     """Search indexed conversations with the semantic retrieval pipeline."""
     retriever = RetrievalPipeline()
     results = retriever.search(query, top_n=max(top_k * 2, 20), final_k=top_k)
@@ -74,7 +99,8 @@ def search(query: str, top_k: int = typer.Option(5, "--top-k", help="Number of r
     typer.echo(f"Found {len(results)} result(s):")
     for item in results:
         typer.echo(
-            f"- [{item.rank}] {item.conversation_title or 'Untitled'} | {item.message_role or 'unknown'} | {item.chunk_text[:180]}"
+            f"- [{item.rank}] {item.conversation_title or 'Untitled'} | "
+            f"{item.message_role or 'unknown'} | {item.chunk_text[:180]}"
         )
 
 
@@ -83,7 +109,10 @@ def benchmark() -> None:
     """Print the latest benchmark summary from the bundled benchmark report."""
     benchmark_path = Path("hybrid_benchmark_results.json")
     if not benchmark_path.exists():
-        typer.secho("No benchmark report found at hybrid_benchmark_results.json", fg=typer.colors.YELLOW)
+        typer.secho(
+            "No benchmark report found at hybrid_benchmark_results.json",
+            fg=typer.colors.YELLOW,
+        )
         raise typer.Exit(0)
 
     with benchmark_path.open("r", encoding="utf-8") as handle:
@@ -94,7 +123,9 @@ def benchmark() -> None:
             continue
         metrics = summary.get("mrr")
         if isinstance(metrics, (int, float)):
-            typer.echo(f"{name}: MRR={metrics:.3f} | hit@10={summary.get('hit_at_10', 0):.3f}")
+            typer.echo(
+                f"{name}: MRR={metrics:.3f} | hit@10={summary.get('hit_at_10', 0):.3f}"
+            )
 
 
 @app.command()
@@ -108,10 +139,12 @@ def evaluate() -> None:
 
 @app.command()
 def stats() -> None:
-    """Print a lightweight inventory of stored conversations, messages, chunks, and embeddings."""
+    """Print a lightweight inventory of stored conversations, messages, chunks,
+    and embeddings."""
+    from sqlalchemy import func, select
+
     from Weft.storage.database import SessionLocal
     from Weft.storage.models import Chunk, Conversation, Embedding, Message
-    from sqlalchemy import func, select
 
     db = SessionLocal()
     try:

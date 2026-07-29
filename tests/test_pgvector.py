@@ -2,6 +2,7 @@ import pytest
 from sentence_transformers import SentenceTransformer
 from sqlalchemy import select
 
+from Weft.config.settings import settings
 from Weft.storage.models import Embedding
 
 
@@ -12,7 +13,7 @@ def test_embedding_vector_distance(db_session):
     This test verifies that the database successfully executes cosine_distance
     queries using the pgvector extension.
     """
-    model = SentenceTransformer("BAAI/bge-small-en-v1.5")
+    model = SentenceTransformer(settings.EMBEDDING_MODEL)
     query = "test query"
     vector_embedding = model.encode(query)
 

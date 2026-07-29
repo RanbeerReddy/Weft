@@ -3,6 +3,7 @@ import sys
 from sentence_transformers import SentenceTransformer
 from sqlalchemy import select
 
+from Weft.config.settings import settings
 from Weft.storage.database import SessionLocal
 from Weft.storage.models import Embedding, Memory, MemoryType, Message
 from Weft.utils.exceptions import WeftException
@@ -47,7 +48,7 @@ def assemble_context(query: str) -> str:
 
         # 3. Semantic Search on Conversation History
         try:
-            model = SentenceTransformer("BAAI/bge-small-en-v1.5")
+            model = SentenceTransformer(settings.EMBEDDING_MODEL)
             query_embedding = model.encode(query, normalize_embeddings=True).tolist()
 
             results = db.execute(

@@ -23,6 +23,7 @@ from typing import Any, Dict, List, Optional
 from sentence_transformers import SentenceTransformer
 from sqlalchemy import select, text
 
+from Weft.config.settings import settings
 from Weft.evaluation.core.memory_metrics import (
     MemoryMetricsCalculator,
     MemoryRetrievalResult,
@@ -30,6 +31,7 @@ from Weft.evaluation.core.memory_metrics import (
 from Weft.storage.database import SessionLocal
 from Weft.storage.models import Chunk, Conversation, Embedding, Message
 from Weft.utils.exceptions import WeftException
+from Weft.utils.logger import logger
 
 MODEL: Optional[SentenceTransformer] = None
 
@@ -37,8 +39,8 @@ MODEL: Optional[SentenceTransformer] = None
 def get_model() -> SentenceTransformer:
     global MODEL
     if MODEL is None:
-        print("[*] Loading embedding model: BAAI/bge-small-en-v1.5")
-        MODEL = SentenceTransformer("BAAI/bge-small-en-v1.5")
+        logger.info("[*] Loading embedding model: BAAI/bge-small-en-v1.5")
+        MODEL = SentenceTransformer(settings.EMBEDDING_MODEL)
     return MODEL
 
 
@@ -345,7 +347,7 @@ def run_experiments(
 
     with open(memory_queries_path, "r", encoding="utf-8") as f:
         queries = json.load(f)
-    print(f"[+] Loaded {len(queries)} benchmark queries")
+    logger.info(f"[+] Loaded {len(queries)} benchmark queries")
 
     db = SessionLocal()
     try:

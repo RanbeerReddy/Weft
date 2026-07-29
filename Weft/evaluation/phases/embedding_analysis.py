@@ -22,8 +22,10 @@ import numpy as np
 from sentence_transformers import SentenceTransformer
 from sqlalchemy import func, select
 
+from Weft.config.settings import settings
 from Weft.storage.database import SessionLocal
 from Weft.storage.models import Chunk, Conversation, Embedding
+from Weft.utils.logger import logger
 
 MODEL: Optional[SentenceTransformer] = None
 
@@ -31,8 +33,8 @@ MODEL: Optional[SentenceTransformer] = None
 def get_model() -> SentenceTransformer:
     global MODEL
     if MODEL is None:
-        print("[*] Loading embedding model: BAAI/bge-small-en-v1.5")
-        MODEL = SentenceTransformer("BAAI/bge-small-en-v1.5")
+        logger.info("[*] Loading embedding model: BAAI/bge-small-en-v1.5")
+        MODEL = SentenceTransformer(settings.EMBEDDING_MODEL)
     return MODEL
 
 
@@ -231,10 +233,12 @@ def run_embedding_analysis(  # noqa: C901
         for c in fa_data.get("classifications", []):
             if c.get("category") in ("B", "C"):
                 queries_to_analyze.append(c)
-        print(f"[+] Found {len(queries_to_analyze)} Category B/C failures to analyze")
+        logger.info(
+            f"[+] Found {len(queries_to_analyze)} Category B/C failures to analyze"
+        )
     else:
         # Fall back to analyzing all queries from memory_queries.json
-        print("[!] No failure report found — analyzing ALL memory queries")
+        logger.warning("[!] No failure report found — analyzing ALL memory queries")
         if memory_queries_path is None:
             memory_queries_path = str(Path(__file__).parent / "memory_queries.json")
         with open(memory_queries_path, "r", encoding="utf-8") as f:
@@ -247,7 +251,7 @@ def run_embedding_analysis(  # noqa: C901
                     "query_type": q.get("query_type"),
                 }
             )
-        print(f"[+] Analyzing {len(queries_to_analyze)} queries")
+        logger.info(f"[+] Analyzing {len(queries_to_analyze)} queries")
 
     db = SessionLocal()
     try:
@@ -288,7 +292,7 @@ def run_embedding_analysis(  # noqa: C901
         gaps = [a["distance_gap"] for a in analyses if "distance_gap" in a]
         if gaps:
             print("\n  Distance gap statistics:")
-            print(f"    Mean gap:   {sum(gaps)/len(gaps):.4f}")
+            print(f"    Mean gap:   {sum(gaps) / len(gaps):.4f}")
             print(f"    Min gap:    {min(gaps):.4f}")
             print(f"    Max gap:    {max(gaps):.4f}")
 

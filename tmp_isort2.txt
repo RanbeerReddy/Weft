@@ -1,0 +1,26 @@
+Fixing D:\pojects\Weft\alembic\env.py
+Fixing D:\pojects\Weft\experiments\audit_script.py
+Fixing D:\pojects\Weft\experiments\generate_audit_data.py
+Fixing D:\pojects\Weft\experiments\generate_audit_data_direct.py
+Fixing D:\pojects\Weft\experiments\peek_jsons.py
+Fixing D:\pojects\Weft\experiments\summarize_jsons.py
+Fixing D:\pojects\Weft\tests\test_cli.py
+Fixing D:\pojects\Weft\tests\test_pgvector.py
+Fixing D:\pojects\Weft\Weft\cli.py
+Fixing D:\pojects\Weft\Weft\core\context_assembler.py
+Fixing D:\pojects\Weft\Weft\core\Extract_data.py
+Fixing D:\pojects\Weft\Weft\core\reconstructing_chats.py
+Fixing D:\pojects\Weft\Weft\core\retrieval.py
+Fixing D:\pojects\Weft\Weft\evaluation\run_all_phases.py
+Fixing D:\pojects\Weft\Weft\evaluation\core\memory_retrieval_eval.py
+Fixing D:\pojects\Weft\Weft\evaluation\phases\chunk_analysis.py
+Fixing D:\pojects\Weft\Weft\evaluation\phases\corpus_validator.py
+Fixing D:\pojects\Weft\Weft\evaluation\phases\embedding_analysis.py
+Fixing D:\pojects\Weft\Weft\evaluation\phases\failure_analysis.py
+Fixing D:\pojects\Weft\Weft\evaluation\phases\ingestion_audit.py
+Fixing D:\pojects\Weft\Weft\evaluation\phases\reranking_dataset.py
+Fixing D:\pojects\Weft\Weft\evaluation\phases\search_experiments.py
+Fixing D:\pojects\Weft\Weft\storage\create_chunks.py
+Fixing D:\pojects\Weft\Weft\storage\create_embedding.py
+Fixing D:\pojects\Weft\Weft\storage\search_memories.py
+Skipped 3 files

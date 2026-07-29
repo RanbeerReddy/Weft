@@ -4,19 +4,33 @@ import json
 import time
 from typing import Any, Dict, List, Optional, Tuple
 
+from typing_extensions import TypedDict
+
 from Weft.core.retrieval import CrossEncoderReranker
-from Weft.evaluation.core.metrics import MetricsCalculator, RetrievalResult
+from Weft.evaluation.core.metrics import (
+    MetricsCalculator,
+    QueryMetrics,
+    RetrievalResult,
+)
 from Weft.utils.exceptions import WeftException
+
+
+class _QueryResult(TypedDict):
+    query: str
+    expected: List[str]
+    metrics: QueryMetrics
+    latency: float
+    retrieved: List[RetrievalResult]
 
 
 def evaluate_system(
     dataset: List[Dict[str, Any]],
     reranker: Optional[CrossEncoderReranker] = None,
     name: str = "Baseline",
-) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
+) -> Tuple[Dict[str, Any], List[_QueryResult]]:
     """Evaluate over queries."""
 
-    results = []
+    results: List[_QueryResult] = []
     latencies = []
 
     print(f"\n[*] Evaluating {name}...")

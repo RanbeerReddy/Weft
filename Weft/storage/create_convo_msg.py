@@ -18,7 +18,6 @@ def ts_to_dt(ts):
 
 def get_content(msg):
     try:
-
         if not msg:
             return ""
 
@@ -36,14 +35,12 @@ def get_content(msg):
 
 def parse_export(path):
     try:
-
         db = SessionLocal()
 
         with open(path, "r", encoding="utf8") as f:
             conversations = json.load(f)
 
         for convo in conversations:
-
             conversation = Conversation(
                 id=convo["id"],
                 title=convo.get("title"),
@@ -59,7 +56,6 @@ def parse_export(path):
             mapping = convo["mapping"]
 
             for node_id, node in mapping.items():
-
                 message = node.get("message")
 
                 if not message:

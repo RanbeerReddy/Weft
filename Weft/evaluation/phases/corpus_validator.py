@@ -25,6 +25,7 @@ from sqlalchemy import func, select
 
 from Weft.storage.database import SessionLocal
 from Weft.storage.models import Chunk, Conversation, Message
+from Weft.utils.logger import logger
 
 
 def search_phrase_in_chunks(db, phrase: str) -> Dict[str, Any]:
@@ -222,7 +223,7 @@ def run_validation(  # noqa: C901
             memory_queries = json.load(f)
         print(f"\n[+] Loaded {len(memory_queries)} memory queries")
     else:
-        print(f"[!] Memory queries not found: {memory_queries_path}")
+        logger.warning(f"[!] Memory queries not found: {memory_queries_path}")
 
     # Load test queries
     if test_queries_path is None:
@@ -233,9 +234,9 @@ def run_validation(  # noqa: C901
     if tq_path.exists():
         with open(tq_path, "r", encoding="utf-8") as f:
             test_queries = json.load(f)
-        print(f"[+] Loaded {len(test_queries)} test queries")
+        logger.info(f"[+] Loaded {len(test_queries)} test queries")
     else:
-        print(f"[!] Test queries not found: {test_queries_path}")
+        logger.warning(f"[!] Test queries not found: {test_queries_path}")
 
     db = SessionLocal()
     try:

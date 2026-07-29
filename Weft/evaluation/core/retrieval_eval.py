@@ -13,6 +13,7 @@ from Weft.evaluation.core.metrics import (
     RetrievalResult,
 )
 from Weft.utils.exceptions import WeftException
+from Weft.utils.logger import logger
 
 # Initialize vector retriever at module level (can be slow)
 RETRIEVER = None
@@ -56,13 +57,13 @@ def load_test_queries(queries_file: Optional[str] = None) -> List[Dict[str, Any]
         resolved_path = Path(queries_file)
 
     if not resolved_path.exists():
-        print(f"[!] Queries file not found: {resolved_path}")
+        logger.error(f"Queries file not found: {resolved_path}")
         return []
 
     try:
         with open(resolved_path, "r", encoding="utf-8") as f:
             queries: List[Dict[str, Any]] = json.load(f)
-        print(f"[+] Loaded {len(queries)} test queries")
+        logger.info(f"Loaded {len(queries)} test queries")
         return queries
     except Exception as e:
         raise WeftException(str(e), e) from e
@@ -84,10 +85,10 @@ def evaluate_all_queries(queries: List[Dict[str, Any]]) -> EvaluationSummary:
         expected_kw = query_dict.get("expected_keywords", [])
 
         if not query_text:
-            print(f"[!] Query {i}: missing 'query' field")
+            logger.warning(f"Query {i}: missing 'query' field")
             continue
 
-        print(f"[{i}/{len(queries)}] Evaluating: {query_text[:60]}...")
+        logger.info(f"[{i}/{len(queries)}] Evaluating: {query_text[:60]}...")
 
         # Retrieve top-k results
         retrieved = retrieve_top_k(query_text, k=10)
@@ -112,7 +113,7 @@ def format_report(summary: EvaluationSummary, verbose: bool = False) -> str:
     Returns:
         Formatted report string.
     """
-    lines = []
+    lines: List[str] = []
     lines.append("=" * 70)
     lines.append("RETRIEVAL EVALUATION REPORT")
     lines.append("=" * 70)
@@ -256,11 +257,11 @@ def main():
     # Load queries
     queries = load_test_queries(args.queries)
     if not queries:
-        print("[!] No queries loaded. Exiting.")
+        logger.warning("No queries loaded. Exiting.")
         return 1
 
     # Evaluate
-    print("\n[*] Starting retrieval evaluation...")
+    logger.info("Starting retrieval evaluation...")
     summary = evaluate_all_queries(queries)
 
     # Print report
@@ -273,8 +274,8 @@ def main():
         output_path = Path(args.json_output)
         output_path.parent.mkdir(parents=True, exist_ok=True)
         with open(output_path, "w", encoding="utf-8") as f:
-            json.dump(json_report, f, indent=2)
-        print(f"[+] JSON report saved to: {output_path}")
+            json.dump(json_report, f, indent=2, default=str)
+        logger.info(f"JSON report saved to: {output_path}")
 
     return 0
 

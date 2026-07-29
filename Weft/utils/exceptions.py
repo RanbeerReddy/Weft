@@ -5,7 +5,6 @@ from .logger import logger
 
 class WeftException(Exception):
     def __init__(self, error_message, error_detail=None):
-
         self.error_message = self.get_detailed_error_message(
             error_message, error_detail
         )
@@ -16,7 +15,6 @@ class WeftException(Exception):
 
     @staticmethod
     def get_detailed_error_message(error_message, error_detail):
-
         if error_detail is None:
             return str(error_message)
 

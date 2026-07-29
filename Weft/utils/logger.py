@@ -32,7 +32,10 @@ formatter = logging.Formatter(LOG_FORMAT)
 # =========================
 
 file_handler = RotatingFileHandler(
-    LOG_FILE, maxBytes=5 * 1024 * 1024, backupCount=5, encoding="utf-8"  # 5MB
+    LOG_FILE,
+    maxBytes=5 * 1024 * 1024,
+    backupCount=5,
+    encoding="utf-8",  # 5MB
 )
 
 file_handler.setFormatter(formatter)

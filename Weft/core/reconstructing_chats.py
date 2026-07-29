@@ -6,18 +6,20 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from Weft.config.settings import settings
 from Weft.utils.exceptions import WeftException
+from Weft.utils.logger import logger
 
 # =========================================================
 # CONFIG
 # =========================================================
 INPUT_FILES = [
-    "Data/Extracted data/conversations-000.json",
-    "Data/Extracted data/conversations-001.json",
-    "Data/Extracted data/conversations-002.json",
+    str(Path(settings.EXTRACTED_DATA_DIR) / "conversations-000.json"),
+    str(Path(settings.EXTRACTED_DATA_DIR) / "conversations-001.json"),
+    str(Path(settings.EXTRACTED_DATA_DIR) / "conversations-002.json"),
 ]
-MERGED_FILE = "conversations.json"
-OUTPUT_DIR = Path("vault/conversations")
+MERGED_FILE = settings.MERGED_CONVERSATIONS_FILE
+OUTPUT_DIR = Path(settings.VAULT_DIR)
 
 WRITE_INDIVIDUAL_MESSAGES = True
 WRITE_FULL_CONVERSATION = True
@@ -117,18 +119,18 @@ def reconstruct_conversation(conversation: dict[str, Any]) -> None:
                 if msg["children"]
                 else "None"
             )
-            prev_link = f"[[{parsed_messages[idx-2]['id']}]]" if idx > 1 else "None"
+            prev_link = f"[[{parsed_messages[idx - 2]['id']}]]" if idx > 1 else "None"
             next_link = (
                 f"[[{parsed_messages[idx]['id']}]]"
                 if idx < len(parsed_messages)
                 else "None"
             )
 
-            content = f"""# {msg['role'].upper()}
+            content = f"""# {msg["role"].upper()}
 
 ## Metadata
-- Message ID: {msg['id']}
-- Created: {msg['create_time']}
+- Message ID: {msg["id"]}
+- Created: {msg["create_time"]}
 - Parent: {parent_link}
 - Children: {children_links}
 - Previous: {prev_link}
@@ -136,7 +138,7 @@ def reconstruct_conversation(conversation: dict[str, Any]) -> None:
 
 ---
 
-{msg['text']}
+{msg["text"]}
 """
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write(content)
@@ -184,32 +186,32 @@ def main() -> None:
     for file in INPUT_FILES:
         path = Path(file)
         if not path.exists():
-            print(f"[!] Missing file: {file}")
+            logger.warning(f"Missing file: {file}")
             continue
-        print(f"[+] Loading {file}")
+        logger.info(f"Loading {file}")
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
             if isinstance(data, list):
                 all_conversations.extend(data)
             else:
-                print(f"[!] Unexpected format in {file}")
+                logger.warning(f"Unexpected format in {file}")
 
     # Write merged file
     with open(MERGED_FILE, "w", encoding="utf-8") as f:
         json.dump(all_conversations, f, indent=2, ensure_ascii=False)
-    print(f"[+] Merged {len(all_conversations)} conversations into {MERGED_FILE}")
+    logger.info(f"Merged {len(all_conversations)} conversations into {MERGED_FILE}")
 
     # Process conversations
     for idx, conversation in enumerate(all_conversations, start=1):
         try:
             reconstruct_conversation(conversation)
-            print(
+            logger.info(
                 f"[{idx}/{len(all_conversations)}] Processed: {conversation.get('title', 'untitled')}"  # noqa: E501
             )
         except Exception as e:
             raise WeftException(str(e), e) from e
 
-    print("\n[+] Reconstruction complete")
+    logger.info("Reconstruction complete")
 
 
 if __name__ == "__main__":

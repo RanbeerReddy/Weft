@@ -21,6 +21,7 @@ from Weft.evaluation.phases.ingestion_audit import run_audit
 from Weft.evaluation.phases.reranking_dataset import run_reranking_preparation
 from Weft.evaluation.phases.search_experiments import run_experiments
 from Weft.utils.exceptions import WeftException
+from Weft.utils.logger import logger
 
 
 def save_report(data: dict, filename: str):
@@ -29,7 +30,7 @@ def save_report(data: dict, filename: str):
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, default=str)
-    print(f"[+] Saved: {path}")
+    logger.info(f"[+] Saved: {path}")
 
 
 def run_all():
@@ -207,7 +208,7 @@ def generate_final_report(all_reports: dict):  # noqa: C901
             for p in mq.get("per_phrase", []):
                 if p["status"] == "DATA_MISSING":
                     lines.append(
-                        f"- ❌ `{p['phrase']}` — DATA MISSING (query: \"{p['query']}\")"
+                        f'- ❌ `{p["phrase"]}` — DATA MISSING (query: "{p["query"]}")'
                     )
             lines.append("")
     else:

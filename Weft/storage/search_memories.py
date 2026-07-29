@@ -3,18 +3,20 @@ import sys
 from sentence_transformers import SentenceTransformer
 from sqlalchemy import select
 
+from Weft.config.settings import settings
 from Weft.storage.database import SessionLocal
 from Weft.storage.models import Embedding, Memory, MemoryType, Message
 from Weft.utils.exceptions import WeftException
+from Weft.utils.logger import logger
 
 
 def search_memories(query: str):
-    print(f"--- Dual Retrieval Search for: '{query}' ---")
+    logger.info(f"--- Dual Retrieval Search for: '{query}' ---")
     db = SessionLocal()
     try:
         # 1. Global Context & Structured Memories
         # In a real system, we'd use NER. Here we do simple keyword matching on JSON string.  # noqa: E501
-        print("\n[Structured Memories]")
+        logger.info("[Structured Memories]")
         memories = db.scalars(select(Memory).where(Memory.status == "active")).all()
         found_memories = []
         for mem in memories:
@@ -26,14 +28,14 @@ def search_memories(query: str):
             for mem in found_memories:
                 t = db.get(MemoryType, mem.type_id)
                 t_name = t.name if t else "Unknown"
-                print(f" - [{t_name}]: {mem.value}")
+                logger.info(f" - [{t_name}]: {mem.value}")
         else:
-            print(" - No relevant structured memories found.")
+            logger.info(" - No relevant structured memories found.")
 
         # 2. Semantic Search on Chunks (Legacy Pipeline)
-        print("\n[Semantic Conversation Context]")
+        logger.info("[Semantic Conversation Context]")
         try:
-            model = SentenceTransformer("BAAI/bge-small-en-v1.5")
+            model = SentenceTransformer(settings.EMBEDDING_MODEL)
             query_embedding = model.encode(query, normalize_embeddings=True).tolist()
 
             # Using pgvector L2 distance or cosine similarity
@@ -55,11 +57,13 @@ def search_memories(query: str):
                     msg = db.get(Message, row.message_id)
                     if msg:
                         content_snippet = (msg.content or "")[:100]
-                        print(
+                        logger.info(
                             f" - [Message {msg.id}] (Dist: {row.dist:.4f}): {content_snippet}..."  # noqa: E501
                         )
             else:
-                print(" - No semantic chunks found. (Have embeddings been created?)")
+                logger.info(
+                    " - No semantic chunks found. (Have embeddings been created?)"
+                )
 
         except Exception as vec_err:
             raise WeftException(str(vec_err), vec_err) from vec_err

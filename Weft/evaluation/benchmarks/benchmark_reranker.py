@@ -3,17 +3,31 @@
 import time
 from typing import Any, Dict, List, Tuple
 
+from typing_extensions import TypedDict
+
 from Weft.core.retrieval import CrossEncoderReranker, RetrievalPipeline, VectorRetriever
-from Weft.evaluation.core.metrics import MetricsCalculator
+from Weft.evaluation.core.metrics import (
+    MetricsCalculator,
+    QueryMetrics,
+    RetrievalResult,
+)
 from Weft.evaluation.core.retrieval_eval import load_test_queries
+
+
+class _QueryResult(TypedDict):
+    query: str
+    expected: List[str]
+    metrics: QueryMetrics
+    latency: float
+    retrieved: List[RetrievalResult]
 
 
 def evaluate_system(
     queries: List[Dict[str, Any]], search_func, name: str
-) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
+) -> Tuple[Dict[str, Any], List[_QueryResult]]:
     """Evaluate a search function over queries."""
 
-    results = []
+    results: List[_QueryResult] = []
     latencies = []
 
     print(f"\n[*] Evaluating {name}...")

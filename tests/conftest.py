@@ -12,9 +12,11 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 # Use the existing local pgvector instance for integration testing
 # In CI, this will connect to the service container
+from Weft.config.settings import settings
+
 TEST_DATABASE_URL = os.getenv(
     "TEST_DATABASE_URL",
-    "postgresql+psycopg2://weft_user:weft_123@localhost:5432/weft_db",
+    settings.DATABASE_URL,
 )
 
 

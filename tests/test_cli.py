@@ -2,7 +2,6 @@ from typer.testing import CliRunner
 
 from Weft.cli import app
 
-
 runner = CliRunner()
 
 

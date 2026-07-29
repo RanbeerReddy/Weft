@@ -8,6 +8,7 @@ from sqlalchemy import String, select
 from Weft.storage.database import SessionLocal
 from Weft.storage.models import Memory, MemoryEvidence, MemoryType, Message
 from Weft.utils.exceptions import WeftException
+from Weft.utils.logger import logger
 
 
 # Dummy deterministic rule-based extractor
@@ -49,7 +50,7 @@ def mock_llm_extract(message_content):
 
 
 def extract_memories():
-    print("Connecting to database...")
+    logger.info("Connecting to database...")
     db = SessionLocal()
     try:
         # Ensure base memory types exist
@@ -65,9 +66,9 @@ def extract_memories():
             type_map[t_name] = t
         db.commit()
 
-        print("Fetching messages from database...")
+        logger.info("Fetching messages from database...")
         messages = db.scalars(select(Message)).all()
-        print(f"Found {len(messages)} messages to process.")
+        logger.info(f"Found {len(messages)} messages to process.")
 
         extracted_count = 0
         for i, msg in enumerate(messages, 1):
@@ -130,10 +131,10 @@ def extract_memories():
                 extracted_count += 1
 
         db.commit()
-        print(f"\nSuccessfully extracted {extracted_count} memories.")
+        logger.info(f"Successfully extracted {extracted_count} memories.")
     except Exception as e:
+        logger.error(f"Extraction failed: {str(e)}")
         raise WeftException(str(e), e) from e
-        print(f"[ERROR] Extraction failed: {str(e)}")
     finally:
         db.close()
 

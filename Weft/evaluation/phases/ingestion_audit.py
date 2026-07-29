@@ -25,6 +25,7 @@ from sqlalchemy import func, select, text
 
 from Weft.storage.database import SessionLocal
 from Weft.storage.models import Chunk, Conversation, Embedding, Message
+from Weft.utils.logger import logger
 
 
 def count_json_conversations(json_path: str) -> Dict[str, Any]:
@@ -220,7 +221,7 @@ def run_audit(json_path: str = "conversations.json") -> Dict[str, Any]:  # noqa:
     print("\n[1/7] Analyzing source JSON...")
     json_stats = count_json_conversations(json_path)
     if "error" in json_stats:
-        print(f"  [!] {json_stats['error']}")
+        logger.warning(f"  [!] {json_stats['error']}")
         report["json_error"] = json_stats["error"]
         json_ids = set()
     else:
@@ -298,7 +299,7 @@ def run_audit(json_path: str = "conversations.json") -> Dict[str, Any]:  # noqa:
             for idx in indexes:
                 print(f"  Index: {idx['name']}")
         else:
-            print("  [!] No indexes found on embeddings table")
+            logger.warning("  [!] No indexes found on embeddings table")
 
         # Summary
         print("\n" + "=" * 70)

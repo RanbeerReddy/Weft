@@ -112,7 +112,7 @@ def evaluate_strategy(
         summary.compute_rates()
 
     print(
-        f"    -> Done in {elapsed:.2f}s | Hit@1: {summary.memory_hit_at_1_rate:.2%} | MRR: {summary.avg_phrase_mrr:.4f} | Latency/q: {(elapsed/len(query_metrics))*1000:.1f}ms"  # noqa: E501
+        f"    -> Done in {elapsed:.2f}s | Hit@1: {summary.memory_hit_at_1_rate:.2%} | MRR: {summary.avg_phrase_mrr:.4f} | Latency/q: {(elapsed / len(query_metrics)) * 1000:.1f}ms"  # noqa: E501
     )
 
     return summary, elapsed

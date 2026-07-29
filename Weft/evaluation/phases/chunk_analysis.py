@@ -23,14 +23,16 @@ from typing import Any, Dict, List, Optional
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from sqlalchemy import func, select
 
+from Weft.config.settings import settings
 from Weft.evaluation.core.memory_metrics import MemoryMetricsCalculator
 from Weft.storage.database import SessionLocal
 from Weft.storage.models import Chunk, Conversation, Message
+from Weft.utils.logger import logger
 
 # Same splitter config as production
 SPLITTER = RecursiveCharacterTextSplitter(
-    chunk_size=1000,
-    chunk_overlap=150,
+    chunk_size=settings.CHUNK_SIZE,
+    chunk_overlap=settings.CHUNK_OVERLAP,
     length_function=len,
 )
 
@@ -260,9 +262,9 @@ def run_chunk_analysis(  # noqa: C901
         # Analyze ALL queries, not just failures, to understand chunking patterns
         for c in fa_data.get("classifications", []):
             queries_to_analyze.append(c)
-        print(f"[+] Analyzing chunking for {len(queries_to_analyze)} queries")
+        logger.info(f"[+] Analyzing chunking for {len(queries_to_analyze)} queries")
     else:
-        print("[!] No failure report found — loading all memory queries")
+        logger.warning("[!] No failure report found — loading all memory queries")
         if memory_queries_path is None:
             memory_queries_path = str(Path(__file__).parent / "memory_queries.json")
         with open(memory_queries_path, "r", encoding="utf-8") as f:
