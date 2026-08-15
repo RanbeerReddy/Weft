@@ -119,6 +119,9 @@ class Memory(Base):
         ForeignKey("memory_types.id", ondelete="SET NULL")
     )
     value: Mapped[dict | None] = mapped_column(JSON)
+    embedding_vector: Mapped[list[float] | None] = mapped_column(
+        Vector(384), nullable=True
+    )
     status: Mapped[str | None] = mapped_column(String)
     create_time: Mapped[datetime | None] = mapped_column(DateTime)
     update_time: Mapped[datetime | None] = mapped_column(DateTime)

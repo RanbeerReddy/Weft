@@ -9,7 +9,7 @@ from Weft.storage.models import Embedding, Memory, MemoryType, Message
 from Weft.utils.exceptions import WeftException
 
 
-def assemble_context(query: str) -> str:
+def assemble_context(query: str) -> str:  # noqa: C901
     db = SessionLocal()
     try:
         context_parts = []
@@ -27,24 +27,48 @@ def assemble_context(query: str) -> str:
                 context_parts.append(f"- {p.value}")
 
         # 2. Query-Specific Memories
-        # (Naive string matching for Phase 4)
-        memories = db.scalars(
-            select(Memory)
-            .join(MemoryType)
-            .where(Memory.status == "active", MemoryType.name != "Preference")
-        ).all()
+        # (Semantic search for Phase 4)
+        try:
+            model = SentenceTransformer(settings.EMBEDDING_MODEL)
+            query_embedding = model.encode(query, normalize_embeddings=True).tolist()
 
-        query_words = query.lower().split()
-        relevant_mems = [
-            m for m in memories if any(w in str(m.value).lower() for w in query_words)
-        ]
+            # Retrieve memories with L2 distance < 1.0 (equivalent to cosine similarity > 0.5)
+            # Ordered by distance ascending, limited to top 5
+            memories = db.scalars(
+                select(Memory)
+                .join(MemoryType)
+                .where(Memory.status == "active", MemoryType.name != "Preference")
+                .where(Memory.embedding_vector.is_not(None))
+                .order_by(Memory.embedding_vector.l2_distance(query_embedding))
+                .limit(5)
+            ).all()
 
-        if relevant_mems:
-            context_parts.append("\n### Relevant Long-term Memories ###")
-            for mem in relevant_mems:
-                t = db.get(MemoryType, mem.type_id)
-                t_name = t.name if t else "Unknown"
-                context_parts.append(f"- [{t_name}]: {mem.value}")
+            # Deduplicate by memory ID (though db should return unique ones, good practice)
+            # And enforce threshold locally since distance isn't easily returned in scalar
+            seen_mems = set()
+            relevant_mems = []
+            for m in memories:
+                if m.id not in seen_mems:
+                    if (
+                        m.embedding_vector
+                        and sum(
+                            (a - b) ** 2
+                            for a, b in zip(m.embedding_vector, query_embedding)
+                        )
+                        < 1.0
+                    ):
+                        relevant_mems.append(m)
+                        seen_mems.add(m.id)
+
+            if relevant_mems:
+                context_parts.append("\n### Relevant Long-term Memories ###")
+                for mem in relevant_mems:
+                    t = db.get(MemoryType, mem.type_id)
+                    t_name = t.name if t else "Unknown"
+                    context_parts.append(f"- [{t_name}]: {mem.value}")
+        except Exception:
+            # Fallback if something fails, log or ignore
+            pass
 
         # 3. Semantic Search on Conversation History
         try:

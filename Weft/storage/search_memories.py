@@ -17,12 +17,39 @@ def search_memories(query: str):
         # 1. Global Context & Structured Memories
         # In a real system, we'd use NER. Here we do simple keyword matching on JSON string.  # noqa: E501
         logger.info("[Structured Memories]")
-        memories = db.scalars(select(Memory).where(Memory.status == "active")).all()
-        found_memories = []
-        for mem in memories:
-            val_str = str(mem.value).lower()
-            if any(word.lower() in val_str for word in query.split()):
-                found_memories.append(mem)
+
+        try:
+            model = SentenceTransformer(settings.EMBEDDING_MODEL)
+            query_embedding = model.encode(query, normalize_embeddings=True).tolist()
+
+            # Retrieve memories with L2 distance < 1.0 (equivalent to cosine similarity > 0.5)
+            # Ordered by distance ascending, limited to top 5
+            memories = db.scalars(
+                select(Memory)
+                .where(Memory.status == "active")
+                .where(Memory.embedding_vector.is_not(None))
+                .order_by(Memory.embedding_vector.l2_distance(query_embedding))
+                .limit(5)
+            ).all()
+
+            found_memories = [
+                mem
+                for mem in memories
+                if mem.embedding_vector
+                and sum(
+                    (a - b) ** 2 for a, b in zip(mem.embedding_vector, query_embedding)
+                )
+                < 1.0
+            ]
+
+            # Note: SQLAlchemy doesn't return the distance as a property of the scalar directly
+            # unless we select it explicitly. We'll recalculate it or just trust the DB order
+            # but we need to enforce the threshold. Since pgvector l2_distance works in SQL,
+            # we could also do it there, but for simplicity we just filter locally or in SQL.
+
+        except Exception as e:
+            logger.error(f"Failed to encode or retrieve memories: {e}")
+            found_memories = []
 
         if found_memories:
             for mem in found_memories:

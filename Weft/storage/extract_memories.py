@@ -3,12 +3,33 @@ import re
 import uuid
 from datetime import datetime
 
+from sentence_transformers import SentenceTransformer
 from sqlalchemy import String, select
 
+from Weft.config.settings import settings
 from Weft.storage.database import SessionLocal
 from Weft.storage.models import Memory, MemoryEvidence, MemoryType, Message
 from Weft.utils.exceptions import WeftException
 from Weft.utils.logger import logger
+
+model = SentenceTransformer(settings.EMBEDDING_MODEL)
+
+
+def format_memory_for_embedding(type_name: str, value: dict) -> str:
+    """Creates a stable natural-language representation of a memory for embedding."""
+    if type_name == "Goal":
+        return f"Goal: {value.get('target', '')}"
+    elif type_name == "Experience":
+        return f"Experience: {value.get('event', '')}"
+    elif type_name == "Project":
+        return f"Project: {value.get('name', '')} - {value.get('description', '')}"
+    elif type_name == "Preference":
+        return f"Preference: {value.get('topic', '')} -> {value.get('preference', '')}"
+    elif type_name == "Skill":
+        return f"Skill: {value.get('name', '')}"
+
+    # Fallback
+    return f"{type_name}: {json.dumps(value)}"
 
 
 # Dummy deterministic rule-based extractor
@@ -105,12 +126,17 @@ def extract_memories():
                     )
                     db.add(evidence)
                 else:
-                    # Create new memory
+                    embedding_text = format_memory_for_embedding(t_name, ext["value"])
+                    embedding_vector = model.encode(
+                        embedding_text, normalize_embeddings=True
+                    ).tolist()
+
                     mem_id = str(uuid.uuid4())
                     memory = Memory(
                         id=mem_id,
                         type_id=type_obj.id,
                         value=ext["value"],
+                        embedding_vector=embedding_vector,
                         status="active",
                         create_time=datetime.utcnow(),
                         update_time=datetime.utcnow(),
