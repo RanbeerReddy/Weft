@@ -1,5 +1,6 @@
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert
 
 from Weft.config.settings import settings
 from Weft.storage.database import SessionLocal
@@ -38,16 +39,22 @@ def build_chunks():
             chunks = split_text(message.content)
 
             for idx, chunk_text in enumerate(chunks):
-                db.add(
-                    Chunk(
+                stmt = (
+                    insert(Chunk)
+                    .values(
                         conversation_id=message.conversation_id,
                         message_id=message.id,
                         chunk_order=idx,
                         chunk_text=chunk_text,
                     )
+                    .on_conflict_do_nothing(
+                        index_elements=["message_id", "chunk_order"]
+                    )
                 )
+                result = db.execute(stmt)
 
-                total_chunks += 1
+                if result.rowcount > 0:
+                    total_chunks += 1
 
         db.commit()
 

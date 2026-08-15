@@ -1,5 +1,6 @@
 from sentence_transformers import SentenceTransformer
 from sqlalchemy import delete, select
+from sqlalchemy.dialects.postgresql import insert
 
 from Weft.config.settings import settings
 from Weft.storage.database import SessionLocal
@@ -47,13 +48,17 @@ def create_embeddings():
                 chunk.chunk_text, normalize_embeddings=True
             ).tolist()
 
-            embedding = Embedding(
-                conversation_id=chunk.conversation_id,
-                message_id=chunk.message_id,
-                chunk_order=chunk.id,
-                embedding_vector=embedding_vector,
+            stmt = (
+                insert(Embedding)
+                .values(
+                    conversation_id=chunk.conversation_id,
+                    message_id=chunk.message_id,
+                    chunk_order=chunk.id,
+                    embedding_vector=embedding_vector,
+                )
+                .on_conflict_do_nothing(index_elements=["chunk_order"])
             )
-            db.add(embedding)
+            db.execute(stmt)
         db.commit()
         logger.info(f"Successfully created embeddings for {len(chunks)} chunks.")
 

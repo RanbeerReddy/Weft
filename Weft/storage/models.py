@@ -12,6 +12,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    UniqueConstraint,
 )
 from sqlalchemy.dialects.postgresql import TSVECTOR
 from sqlalchemy.orm import Mapped, mapped_column
@@ -76,6 +77,7 @@ class Chunk(Base):
 
     __table_args__ = (
         Index("ix_chunks_tsvector", "chunk_tsvector", postgresql_using="gin"),
+        UniqueConstraint("message_id", "chunk_order", name="uq_chunk_msg_order"),
     )
 
 
@@ -97,6 +99,8 @@ class Embedding(Base):
     )
 
     embedding_vector: Mapped[list[float]] = mapped_column(Vector(384))
+
+    __table_args__ = (UniqueConstraint("chunk_order", name="uq_embedding_chunk_id"),)
 
 
 class MemoryType(Base):
