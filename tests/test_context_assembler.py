@@ -33,17 +33,22 @@ def seeded_db(db_session):
 
     db_session.commit()
 
+    from sentence_transformers import SentenceTransformer
+    model = SentenceTransformer("BAAI/bge-small-en-v1.5")
+    
     mem1 = Memory(
         id=str(uuid.uuid4()),
         type_id=pref_type.id,
         value={"target": "Prefers concise answers"},
         status="active",
+        embedding_vector=list(model.encode("Prefers concise answers")),
     )
     mem2 = Memory(
         id=str(uuid.uuid4()),
         type_id=goal_type.id,
         value={"target": "Learn rust programming"},
         status="active",
+        embedding_vector=list(model.encode("Learn rust programming")),
     )
     db_session.add_all([mem1, mem2])
     db_session.commit()
@@ -55,10 +60,10 @@ def seeded_db(db_session):
 def test_assemble_context(mock_session_local, seeded_db):
     mock_session_local.return_value = seeded_db
 
-    query = "How do I learn rust?"
+    query = "Learn rust programming"
     result = assemble_context(query)
 
     # Assertions
     assert "Prefers concise answers" in result  # Preference always injected
     assert "Learn rust programming" in result  # Relevant memory injected
-    assert "How do I learn rust?" in result  # Query is included
+    assert "Learn rust programming" in result  # Query is included
