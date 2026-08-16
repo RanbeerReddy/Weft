@@ -168,8 +168,9 @@ def run_benchmark():
             (
                 c.rank
                 for c in b_res["retrieved"]
-                if MetricsCalculator.extract_keywords(c.chunk_text)
-                & set(x.lower() for x in b_res["expected"])
+                if MetricsCalculator.is_hit(
+                    c.chunk_text, set(x.lower() for x in b_res["expected"])
+                )
             ),
             None,
         )
@@ -177,8 +178,9 @@ def run_benchmark():
             (
                 c.rank
                 for c in r_res["retrieved"]
-                if MetricsCalculator.extract_keywords(c.chunk_text)
-                & set(x.lower() for x in r_res["expected"])
+                if MetricsCalculator.is_hit(
+                    c.chunk_text, set(x.lower() for x in r_res["expected"])
+                )
             ),
             None,
         )

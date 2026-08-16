@@ -123,6 +123,14 @@ class MetricsCalculator:
         return {w for w in words if len(w) >= 3 and w not in stop_words}
 
     @staticmethod
+    def is_hit(chunk_text: str, expected_keywords: Set[str]) -> bool:
+        """Strict hit: ALL expected keywords must be substrings."""
+        if not expected_keywords:
+            return False
+        chunk_lower = chunk_text.lower()
+        return all(kw in chunk_lower for kw in expected_keywords)
+
+    @staticmethod
     def normalize_keywords(keywords: List[str]) -> Set[str]:
         """Normalize expected keywords for matching."""
         return {kw.lower().strip() for kw in keywords}
@@ -131,10 +139,9 @@ class MetricsCalculator:
     def calculate_hit_at_k(
         retrieved_chunks: List[RetrievalResult], expected_keywords: Set[str], k: int
     ) -> bool:
-        """Calculate Hit@k: did any of top-k results contain an expected keyword?"""
+        """Calculate Hit@k: did any of top-k results contain ALL expected keywords?"""
         for chunk in retrieved_chunks[:k]:
-            chunk_keywords = MetricsCalculator.extract_keywords(chunk.chunk_text)
-            if chunk_keywords & expected_keywords:  # intersection
+            if MetricsCalculator.is_hit(chunk.chunk_text, expected_keywords):
                 return True
         return False
 
@@ -142,14 +149,16 @@ class MetricsCalculator:
     def calculate_keyword_recall(
         retrieved_chunks: List[RetrievalResult], expected_keywords: Set[str]
     ) -> float:
-        """Keyword Recall: % of expected keywords found in top-k results."""
+        """Keyword Recall: % of expected keywords found in chunks."""
         if not expected_keywords:
             return 0.0
 
         found_keywords = set()
         for chunk in retrieved_chunks:
-            chunk_keywords = MetricsCalculator.extract_keywords(chunk.chunk_text)
-            found_keywords.update(chunk_keywords & expected_keywords)
+            chunk_lower = chunk.chunk_text.lower()
+            for kw in expected_keywords:
+                if kw in chunk_lower:
+                    found_keywords.add(kw)
 
         return len(found_keywords) / len(expected_keywords)
 
@@ -157,20 +166,18 @@ class MetricsCalculator:
     def calculate_keyword_precision(
         retrieved_chunks: List[RetrievalResult], expected_keywords: Set[str]
     ) -> float:
-        """Keyword Precision: % of retrieved keywords that are expected."""
+        """Keyword Precision: Not highly meaningful for strict substring matching.
+        Returns % of retrieved chunks that are hits.
+        """
         if not retrieved_chunks:
             return 0.0
 
-        all_retrieved_keywords = set()
-        for chunk in retrieved_chunks:
-            chunk_keywords = MetricsCalculator.extract_keywords(chunk.chunk_text)
-            all_retrieved_keywords.update(chunk_keywords)
-
-        if not all_retrieved_keywords:
-            return 0.0
-
-        matching_keywords = all_retrieved_keywords & expected_keywords
-        return len(matching_keywords) / len(all_retrieved_keywords)
+        hits = sum(
+            1
+            for c in retrieved_chunks
+            if MetricsCalculator.is_hit(c.chunk_text, expected_keywords)
+        )
+        return hits / len(retrieved_chunks)
 
     @staticmethod
     def calculate_mrr(
@@ -178,11 +185,10 @@ class MetricsCalculator:
     ) -> float:
         """Mean Reciprocal Rank: 1 / (rank of first relevant result).
 
-        A relevant result is one that contains any expected keyword.
+        A relevant result is one that contains ALL expected keywords.
         """
         for chunk in retrieved_chunks:
-            chunk_keywords = MetricsCalculator.extract_keywords(chunk.chunk_text)
-            if chunk_keywords & expected_keywords:
+            if MetricsCalculator.is_hit(chunk.chunk_text, expected_keywords):
                 return 1.0 / chunk.rank
 
         return 0.0
