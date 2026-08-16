@@ -50,7 +50,7 @@ def assemble_context(query: str) -> str:  # noqa: C901
             for m in memories:
                 if m.id not in seen_mems:
                     if (
-                        m.embedding_vector
+                        m.embedding_vector is not None
                         and sum(
                             (a - b) ** 2
                             for a, b in zip(m.embedding_vector, query_embedding)
@@ -66,9 +66,9 @@ def assemble_context(query: str) -> str:  # noqa: C901
                     t = db.get(MemoryType, mem.type_id)
                     t_name = t.name if t else "Unknown"
                     context_parts.append(f"- [{t_name}]: {mem.value}")
-        except Exception:
+        except Exception as e:
             # Fallback if something fails, log or ignore
-            pass
+            raise WeftException(f"Failed to retrieve long-term memories: {e}") from e
 
         # 3. Semantic Search on Conversation History
         try:

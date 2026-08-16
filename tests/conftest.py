@@ -34,8 +34,8 @@ def engine():
     engine.dispose()
 
 
-@pytest.fixture(scope="function")
-def db_session(engine):
+@pytest.fixture(scope="function", autouse=True)
+def db_session(engine, monkeypatch):
     """
     Returns an sqlalchemy session, and after the test tears down,
     rolls back the transaction to ensure an isolated test environment.
@@ -45,6 +45,9 @@ def db_session(engine):
 
     Session = scoped_session(sessionmaker(bind=connection))
     session = Session()
+    
+    # Patch SessionLocal globally so all code uses this transactional session
+    monkeypatch.setattr("Weft.storage.database.SessionLocal", lambda: session)
 
     yield session
 
@@ -54,23 +57,39 @@ def db_session(engine):
 
 
 @pytest.fixture(autouse=True)
-def mock_sentence_transformer(monkeypatch):
+def mock_sentence_transformer(request, monkeypatch):
     """
     Automatically mock SentenceTransformer to prevent downloading large models
     during tests, speeding up CI.
+    Skips mocking for tests marked with @pytest.mark.integration.
     """
+    if "integration" in request.node.keywords:
+        return
 
     class MockModel:
         def __init__(self, *args, **kwargs):
             pass
 
         def encode(self, sentences, *args, **kwargs):
-            # Return a deterministic mock vector of dimension 384 (as expected by pgvector)  # noqa: E501
-            # If multiple sentences, return a list of vectors
+            import numpy as np
             dim = 384
             if isinstance(sentences, str):
-                return [0.1] * dim
-            return [[0.1] * dim for _ in sentences]
+                return np.array([0.1] * dim)
+            return [np.array([0.1] * dim) for _ in sentences]
 
     # Patch the SentenceTransformer globally in the sentence_transformers module
     monkeypatch.setattr("sentence_transformers.SentenceTransformer", MockModel)
+    
+    # Also patch direct imports
+    import Weft.core.context_assembler
+    if hasattr(Weft.core.context_assembler, "SentenceTransformer"):
+        monkeypatch.setattr("Weft.core.context_assembler.SentenceTransformer", MockModel)
+        
+    import Weft.storage.create_embedding
+    if hasattr(Weft.storage.create_embedding, "SentenceTransformer"):
+        monkeypatch.setattr("Weft.storage.create_embedding.SentenceTransformer", MockModel)
+    
+    # Reset any cached model so the mock is picked up
+    if hasattr(Weft.storage.create_embedding, "_model"):
+        monkeypatch.setattr("Weft.storage.create_embedding._model", None)
+
