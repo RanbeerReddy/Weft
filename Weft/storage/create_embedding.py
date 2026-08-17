@@ -10,11 +10,13 @@ from Weft.utils.logger import logger
 
 _model = None
 
+
 def get_model():
     global _model
     if _model is None:
         _model = SentenceTransformer(settings.EMBEDDING_MODEL)
     return _model
+
 
 def clear_embeddings():
     logger.info("Connecting to database...")
@@ -49,9 +51,9 @@ def create_embeddings():
             # Diagnostic progress counter
             logger.info(f"Encoding chunk {i}/{len(chunks)} (ID: {chunk.id})...")
 
-            embedding_vector = get_model().encode(
-                chunk.chunk_text, normalize_embeddings=True
-            ).tolist()
+            embedding_vector = (
+                get_model().encode(chunk.chunk_text, normalize_embeddings=True).tolist()
+            )
 
             stmt = (
                 insert(Embedding)
@@ -67,9 +69,10 @@ def create_embeddings():
         db.commit()
         logger.info(f"Successfully created embeddings for {len(chunks)} chunks.")
 
-    except WeftException as e:
+    except WeftException:
         db.rollback()
-        logger.error(f"Execution failed: {str(e)}")
+        logger.exception("Execution failed")
+        raise
     finally:
         db.close()
         logger.info("Database session closed.")

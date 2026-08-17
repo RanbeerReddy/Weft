@@ -74,7 +74,7 @@ def evaluate_system(
 
 def run_benchmark():
     """Run baseline vs reranker benchmark."""
-    queries = load_test_queries()
+    queries = load_test_queries("Weft/evaluation/data/test_queries.json")
     if not queries:
         return
 

@@ -62,6 +62,8 @@ def build_chunks():
 
     except WeftException:
         db.close()
+        logger.exception("Failed to build chunks")
+        raise
 
 
 if __name__ == "__main__":

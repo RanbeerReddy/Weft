@@ -94,7 +94,9 @@ class MemoryMetricsCalculator:
 
     @staticmethod
     def find_memory_rank(
-        expected_id: str, retrieved_chunks: List[MemoryRetrievalResult], max_rank: int = 50
+        expected_id: str,
+        retrieved_chunks: List[MemoryRetrievalResult],
+        max_rank: int = 50,
     ) -> Optional[int]:
         """Find the rank of first occurrence of the expected ID in retrieved chunks.
 

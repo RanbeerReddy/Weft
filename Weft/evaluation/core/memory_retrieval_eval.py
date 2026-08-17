@@ -20,7 +20,7 @@ from Weft.evaluation.core.memory_metrics import (
     MemoryRetrievalResult,
 )
 from Weft.storage.database import SessionLocal
-from Weft.storage.models import Conversation, Memory, MemoryType, Message
+from Weft.storage.models import Memory, MemoryType
 from Weft.utils.exceptions import WeftException
 from Weft.utils.logger import logger
 
@@ -36,7 +36,9 @@ def get_model() -> SentenceTransformer:
     return MODEL
 
 
-def retrieve_top_k_memories(db: Session, query: str, k: int = 50) -> List[MemoryRetrievalResult]:
+def retrieve_top_k_memories(
+    db: Session, query: str, k: int = 50
+) -> List[MemoryRetrievalResult]:
     """Retrieve top-k memories for a query exactly as the engine does.
 
     Args:
@@ -69,19 +71,19 @@ def retrieve_top_k_memories(db: Session, query: str, k: int = 50) -> List[Memory
 
     for row in results:
         mem, dist = row[0], row[1]
-        
+
         if mem.id in seen_ids:
             continue
-            
+
         # Weft threshold for memory retrieval is 1.0 (L2 distance)
-        # But for evaluation, we want to see ranking even if > 1.0, 
+        # But for evaluation, we want to see ranking even if > 1.0,
         # but we flag it if it wouldn't be a hit.
         # Actually, let's just return all of them so we can compute MRR and candidate recall.
-        
+
         # Get metadata
         convo_id = mem.conversation_id if hasattr(mem, "conversation_id") else None
         msg_id = mem.message_id if hasattr(mem, "message_id") else None
-        
+
         retrieved.append(
             MemoryRetrievalResult(
                 rank=rank,
@@ -116,24 +118,26 @@ def load_fixtures(db: Session, fixtures_file: Optional[str] = None):
 
         logger.info(f"Loading {len(fixtures)} fixtures into DB")
         model = get_model()
-        
+
         # Ensure memory types exist
         types = set(f.get("type_name", "Experience") for f in fixtures)
         for t in types:
             if not db.scalars(select(MemoryType).where(MemoryType.name == t)).first():
                 db.add(MemoryType(id=f"type-{t.lower()}", name=t, description=t))
         db.flush()
-        
+
         type_map = {t.name: t.id for t in db.scalars(select(MemoryType)).all()}
 
         inserted_ids = []
         for fixture in fixtures:
             # Delete if exists
             db.execute(delete(Memory).where(Memory.id == fixture["id"]))
-            
+
             # Create embedding
-            embedding = model.encode(fixture["value"], normalize_embeddings=True).tolist()
-            
+            embedding = model.encode(
+                fixture["value"], normalize_embeddings=True
+            ).tolist()
+
             mem = Memory(
                 id=fixture["id"],
                 type_id=type_map.get(fixture.get("type_name", "Experience")),
@@ -146,7 +150,7 @@ def load_fixtures(db: Session, fixtures_file: Optional[str] = None):
                 mem.conversation_id = fixture["conversation_id"]
             if hasattr(mem, "message_id") and "message_id" in fixture:
                 mem.message_id = fixture["message_id"]
-                
+
             db.add(mem)
             inserted_ids.append(fixture["id"])
 
@@ -175,7 +179,9 @@ def load_queries(queries_file: Optional[str] = None) -> List[Dict[str, Any]]:
     """Load benchmark queries."""
     resolved_path: Path
     if queries_file is None:
-        resolved_path = Path(__file__).parent.parent / "data" / "memory_benchmark_queries.json"
+        resolved_path = (
+            Path(__file__).parent.parent / "data" / "memory_benchmark_queries.json"
+        )
     else:
         resolved_path = Path(queries_file)
 
@@ -190,7 +196,9 @@ def load_queries(queries_file: Optional[str] = None) -> List[Dict[str, Any]]:
         raise WeftException(str(e), e) from e
 
 
-def evaluate_all_queries(db: Session, queries: List[Dict[str, Any]]) -> MemoryEvaluationSummary:
+def evaluate_all_queries(
+    db: Session, queries: List[Dict[str, Any]]
+) -> MemoryEvaluationSummary:
     """Evaluate all queries and compute ID-based metrics."""
     query_metrics = []
 
@@ -203,7 +211,9 @@ def evaluate_all_queries(db: Session, queries: List[Dict[str, Any]]) -> MemoryEv
             logger.warning(f"Query {i}: missing 'query' or 'expected_id'")
             continue
 
-        logger.info(f"[{i}/{len(queries)}] Evaluating: {query_text[:60]}... -> {expected_id}")
+        logger.info(
+            f"[{i}/{len(queries)}] Evaluating: {query_text[:60]}... -> {expected_id}"
+        )
 
         # Retrieve
         retrieved = retrieve_top_k_memories(db, query_text, k=50)
@@ -220,8 +230,7 @@ def evaluate_all_queries(db: Session, queries: List[Dict[str, Any]]) -> MemoryEv
 
     # Aggregate metrics
     summary = MemoryEvaluationSummary(
-        total_queries=len(query_metrics),
-        per_query_metrics=query_metrics
+        total_queries=len(query_metrics), per_query_metrics=query_metrics
     )
 
     for m in query_metrics:
@@ -233,7 +242,7 @@ def evaluate_all_queries(db: Session, queries: List[Dict[str, Any]]) -> MemoryEv
             summary.queries_with_hits_at_5 += 1
         if m.memory_hit_at_10:
             summary.queries_with_hits_at_10 += 1
-            
+
         if m.candidate_recall_at_10:
             summary.queries_with_candidate_recall_at_10 += 1
         if m.candidate_recall_at_20:
@@ -263,34 +272,54 @@ def format_report(summary: MemoryEvaluationSummary, verbose: bool = False) -> st
     lines.append("")
 
     lines.append("HIT RATE METRICS (Exact ID Match):")
-    lines.append(f"  Hit@1:             {summary.memory_hit_at_1_rate:.1%} ({summary.queries_with_hits_at_1}/{summary.total_queries})")
-    lines.append(f"  Hit@3:             {summary.memory_hit_at_3_rate:.1%} ({summary.queries_with_hits_at_3}/{summary.total_queries})")
-    lines.append(f"  Hit@5:             {summary.memory_hit_at_5_rate:.1%} ({summary.queries_with_hits_at_5}/{summary.total_queries})")
-    lines.append(f"  Hit@10:            {summary.memory_hit_at_10_rate:.1%} ({summary.queries_with_hits_at_10}/{summary.total_queries})")
+    lines.append(
+        f"  Hit@1:             {summary.memory_hit_at_1_rate:.1%} ({summary.queries_with_hits_at_1}/{summary.total_queries})"
+    )
+    lines.append(
+        f"  Hit@3:             {summary.memory_hit_at_3_rate:.1%} ({summary.queries_with_hits_at_3}/{summary.total_queries})"
+    )
+    lines.append(
+        f"  Hit@5:             {summary.memory_hit_at_5_rate:.1%} ({summary.queries_with_hits_at_5}/{summary.total_queries})"
+    )
+    lines.append(
+        f"  Hit@10:            {summary.memory_hit_at_10_rate:.1%} ({summary.queries_with_hits_at_10}/{summary.total_queries})"
+    )
     lines.append(f"  MRR:               {summary.avg_memory_mrr:.3f}")
     lines.append("")
-    
+
     lines.append("CANDIDATE RECALL (Is it retrievable at all?):")
-    lines.append(f"  Top 10:            {summary.candidate_recall_at_10_rate:.1%} ({summary.queries_with_candidate_recall_at_10})")
-    lines.append(f"  Top 20:            {summary.candidate_recall_at_20_rate:.1%} ({summary.queries_with_candidate_recall_at_20})")
-    lines.append(f"  Top 50:            {summary.candidate_recall_at_50_rate:.1%} ({summary.queries_with_candidate_recall_at_50})")
+    lines.append(
+        f"  Top 10:            {summary.candidate_recall_at_10_rate:.1%} ({summary.queries_with_candidate_recall_at_10})"
+    )
+    lines.append(
+        f"  Top 20:            {summary.candidate_recall_at_20_rate:.1%} ({summary.queries_with_candidate_recall_at_20})"
+    )
+    lines.append(
+        f"  Top 50:            {summary.candidate_recall_at_50_rate:.1%} ({summary.queries_with_candidate_recall_at_50})"
+    )
     lines.append("")
 
     if verbose and summary.per_query_metrics:
         lines.append("=" * 70)
         lines.append("DETAILED QUERY RESULTS")
         lines.append("=" * 70)
-        
+
         for i, m in enumerate(summary.per_query_metrics, start=1):
             lines.append(f"[{i}] Query: {m.query}")
             lines.append(f"    Expected ID: {m.expected_id}")
-            lines.append(f"    Rank found: {m.memory_rank if m.memory_rank else 'Not in top 50'}")
-            lines.append(f"    Hit@1/3/5/10: {m.memory_hit_at_1}/{m.memory_hit_at_3}/{m.memory_hit_at_5}/{m.memory_hit_at_10}")
-            
+            lines.append(
+                f"    Rank found: {m.memory_rank if m.memory_rank else 'Not in top 50'}"
+            )
+            lines.append(
+                f"    Hit@1/3/5/10: {m.memory_hit_at_1}/{m.memory_hit_at_3}/{m.memory_hit_at_5}/{m.memory_hit_at_10}"
+            )
+
             if m.retrieved_chunks:
                 lines.append("    Top 3 retrieved:")
                 for chunk in m.retrieved_chunks[:3]:
-                    marker = "[EXPECTED]" if chunk.memory_id == m.expected_id else "[WRONG]"
+                    marker = (
+                        "[EXPECTED]" if chunk.memory_id == m.expected_id else "[WRONG]"
+                    )
                     lines.append(
                         f"      [{chunk.rank}] {marker} dist={chunk.distance:.4f} id={chunk.memory_id}: {chunk.chunk_text[:50]}..."
                     )
@@ -303,7 +332,9 @@ def main():
     """Main CLI entrypoint."""
     import argparse
 
-    parser = argparse.ArgumentParser(description="Evaluate Weft memory retrieval with ID fixtures")
+    parser = argparse.ArgumentParser(
+        description="Evaluate Weft memory retrieval with ID fixtures"
+    )
     parser.add_argument("--queries", type=str, default=None)
     parser.add_argument("--fixtures", type=str, default=None)
     parser.add_argument("--verbose", action="store_true", default=True)
@@ -320,15 +351,15 @@ def main():
     try:
         # 1. Load fixtures
         inserted_ids = load_fixtures(db, args.fixtures)
-        
+
         # 2. Evaluate
         logger.info("Starting memory retrieval evaluation...")
         summary = evaluate_all_queries(db, queries)
-        
+
         # 3. Print report
         print("\n")
         print(format_report(summary, verbose=args.verbose))
-        
+
     finally:
         # 4. Cleanup
         cleanup_fixtures(db, inserted_ids)

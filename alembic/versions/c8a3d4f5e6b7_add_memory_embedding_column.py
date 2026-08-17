@@ -16,7 +16,7 @@ import pgvector
 revision: str = 'c8a3d4f5e6b7'
 down_revision: Union[str, Sequence[str], None] = 'b52e3df2f91a'
 branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+depends_on: Union[str, Sequence[str], None] = 'c780f73d4748'
 
 
 def upgrade() -> None:

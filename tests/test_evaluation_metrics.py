@@ -1,5 +1,4 @@
 import unittest
-from typing import List
 
 from Weft.evaluation.core.memory_metrics import (
     MemoryMetricsCalculator,

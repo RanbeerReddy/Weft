@@ -11,7 +11,6 @@ from Weft.storage.models import Memory, MemoryType
 
 
 class TestMemoryRetrieval(unittest.TestCase):
-
     @patch("Weft.core.context_assembler.SessionLocal")
     @patch("Weft.core.context_assembler.SentenceTransformer")
     def test_context_assembler_logic(self, mock_transformer_class, mock_session_local):
@@ -64,18 +63,21 @@ class TestMemoryRetrieval(unittest.TestCase):
         # Second call is for Query-Specific Memories
         mock_prefs = MagicMock()
         mock_prefs.all.return_value = []
-        
+
         mock_queries = MagicMock()
         mock_queries.all.return_value = [mem_sensovibe, mem_generic, mem_duplicate]
-        
+
         # We need it to return mock_prefs then mock_queries for each assemble_context call
         # Since we call assemble_context 3 times, we need 6 returns total
         mock_db.scalars.side_effect = [
-            mock_prefs, mock_queries,
-            mock_prefs, mock_queries,
-            mock_prefs, mock_queries
+            mock_prefs,
+            mock_queries,
+            mock_prefs,
+            mock_queries,
+            mock_prefs,
+            mock_queries,
         ]
-        
+
         mock_db.execute.return_value.all.return_value = (
             []
         )  # Mock conversation history to empty

@@ -4,6 +4,7 @@ from datetime import datetime
 from Weft.storage.database import SessionLocal
 from Weft.storage.models import Conversation, Message
 from Weft.utils.exceptions import WeftException
+from Weft.utils.logger import logger
 
 
 def ts_to_dt(ts):
@@ -76,7 +77,8 @@ def parse_export(path):
 
         db.close()
     except WeftException:
-        pass
+        logger.exception(f"Failed to parse export {path}")
+        raise
 
 
 if __name__ == "__main__":

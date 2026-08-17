@@ -7,7 +7,7 @@ readme = "README.md"
 packages = [{ include = "Weft" }]
 
 [tool.poetry.dependencies]
-python = ">=3.11,<3.13"
+python = ">=3.11,<3.12"
 
 [tool.poetry.scripts]
 weft = "Weft.cli:app"

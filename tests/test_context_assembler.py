@@ -34,8 +34,9 @@ def seeded_db(db_session):
     db_session.commit()
 
     from sentence_transformers import SentenceTransformer
+
     model = SentenceTransformer("BAAI/bge-small-en-v1.5")
-    
+
     mem1 = Memory(
         id=str(uuid.uuid4()),
         type_id=pref_type.id,
