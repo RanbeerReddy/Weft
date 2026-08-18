@@ -1,9 +1,8 @@
-print("Script started")
+import os
 import sys
 
+print("Script started")
 print("Imported sys")
-import os
-
 print("Imported os")
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 print("Added to path")

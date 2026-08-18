@@ -32,7 +32,8 @@ def assemble_context(query: str) -> str:  # noqa: C901
             model = SentenceTransformer(settings.EMBEDDING_MODEL)
             query_embedding = model.encode(query, normalize_embeddings=True).tolist()
 
-            # Retrieve memories with L2 distance < 1.0 (equivalent to cosine similarity > 0.5)
+            # Retrieve memories with L2 distance < 1.0
+            # (equivalent to cosine similarity > 0.5)
             # Ordered by distance ascending, limited to top 5
             memories = db.scalars(
                 select(Memory)
@@ -43,8 +44,10 @@ def assemble_context(query: str) -> str:  # noqa: C901
                 .limit(5)
             ).all()
 
-            # Deduplicate by memory ID (though db should return unique ones, good practice)
-            # And enforce threshold locally since distance isn't easily returned in scalar
+            # Deduplicate by memory ID
+            # (db should return unique ones, but good practice)
+            # Enforce threshold locally since distance isn't
+            # easily returned in scalar
             seen_mems = set()
             relevant_mems = []
             for m in memories:

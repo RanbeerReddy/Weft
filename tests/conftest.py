@@ -14,7 +14,9 @@ def get_test_database_url():
     url = os.getenv("TEST_DATABASE_URL")
     if not url:
         pytest.fail(
-            "TEST_DATABASE_URL environment variable must be set for database tests to prevent accidental data loss. "
+            "TEST_DATABASE_URL environment variable must be "
+            "set for database tests to prevent accidental "
+            "data loss. "
             "Example: TEST_DATABASE_URL=postgresql+psycopg2://weft_user:weft_123@localhost:5432/weft_test_db"
         )
     return url

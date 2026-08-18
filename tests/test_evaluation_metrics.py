@@ -63,7 +63,8 @@ class TestMemoryEvaluationMetrics(unittest.TestCase):
         self.assertEqual(metrics.memory_rank, 1)
 
     def test_same_topic_incorrect_memory_miss(self):
-        """Test that same-topic but incorrect memory ID results in a miss for top rank."""
+        """Test that same-topic but incorrect memory ID
+        results in a miss for top rank."""
         # mem-102 is rank 2, so hit@1 should be False, but hit@3 should be True
         metrics = MemoryMetricsCalculator.evaluate_memory_query(
             query="what internship opportunities did I discuss?",

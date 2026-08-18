@@ -22,7 +22,8 @@ def search_memories(query: str):
             model = SentenceTransformer(settings.EMBEDDING_MODEL)
             query_embedding = model.encode(query, normalize_embeddings=True).tolist()
 
-            # Retrieve memories with L2 distance < 1.0 (equivalent to cosine similarity > 0.5)
+            # Retrieve memories with L2 distance < 1.0
+            # (equivalent to cosine similarity > 0.5)
             # Ordered by distance ascending, limited to top 5
             memories = db.scalars(
                 select(Memory)
@@ -42,10 +43,13 @@ def search_memories(query: str):
                 < 1.0
             ]
 
-            # Note: SQLAlchemy doesn't return the distance as a property of the scalar directly
-            # unless we select it explicitly. We'll recalculate it or just trust the DB order
-            # but we need to enforce the threshold. Since pgvector l2_distance works in SQL,
-            # we could also do it there, but for simplicity we just filter locally or in SQL.
+            # Note: SQLAlchemy doesn't return the distance
+            # as a property of the scalar directly unless we
+            # select it explicitly. We'll recalculate it or
+            # just trust the DB order but we need to enforce
+            # the threshold. Since pgvector l2_distance works
+            # in SQL, we could also do it there, but for
+            # simplicity we just filter locally or in SQL.
 
         except Exception as e:
             logger.error(f"Failed to encode or retrieve memories: {e}")

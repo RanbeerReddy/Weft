@@ -57,7 +57,8 @@ class TestMemoryRetrieval(unittest.TestCase):
         mock_session_local.return_value = mock_db
 
         # Handle the chaining: db.scalars().all()
-        # The first call in assemble_context is for Preferences, second for Query-Specific Memories
+        # The first call in assemble_context is for Preferences,
+        # second for Query-Specific Memories
 
         # First call is for Preferences (return empty list)
         # Second call is for Query-Specific Memories
@@ -67,7 +68,8 @@ class TestMemoryRetrieval(unittest.TestCase):
         mock_queries = MagicMock()
         mock_queries.all.return_value = [mem_sensovibe, mem_generic, mem_duplicate]
 
-        # We need it to return mock_prefs then mock_queries for each assemble_context call
+        # We need it to return mock_prefs then mock_queries
+        # for each assemble_context call
         # Since we call assemble_context 3 times, we need 6 returns total
         mock_db.scalars.side_effect = [
             mock_prefs,

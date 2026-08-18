@@ -17,6 +17,7 @@ from Weft.config.settings import settings
 from Weft.evaluation.core.memory_metrics import (
     MemoryEvaluationSummary,
     MemoryMetricsCalculator,
+    MemoryQueryMetrics,
     MemoryRetrievalResult,
 )
 from Weft.storage.database import SessionLocal
@@ -44,7 +45,8 @@ def retrieve_top_k_memories(
     Args:
         db: Database session.
         query: Search query string.
-        k: Max results to return for evaluation (typically we need more than engine's 5).
+        k: Max results to return for evaluation
+            (typically we need more than engine's 5).
 
     Returns:
         List of MemoryRetrievalResult objects, ranked by distance.
@@ -78,7 +80,8 @@ def retrieve_top_k_memories(
         # Weft threshold for memory retrieval is 1.0 (L2 distance)
         # But for evaluation, we want to see ranking even if > 1.0,
         # but we flag it if it wouldn't be a hit.
-        # Actually, let's just return all of them so we can compute MRR and candidate recall.
+        # Actually, let's just return all of them so we can
+        # compute MRR and candidate recall.
 
         # Get metadata
         convo_id = mem.conversation_id if hasattr(mem, "conversation_id") else None
@@ -196,6 +199,35 @@ def load_queries(queries_file: Optional[str] = None) -> List[Dict[str, Any]]:
         raise WeftException(str(e), e) from e
 
 
+def _aggregate_metrics(
+    summary: MemoryEvaluationSummary,
+    query_metrics: List[MemoryQueryMetrics],
+) -> None:
+    """Aggregate per-query metrics into the summary."""
+    for m in query_metrics:
+        if m.memory_hit_at_1:
+            summary.queries_with_hits_at_1 += 1
+        if m.memory_hit_at_3:
+            summary.queries_with_hits_at_3 += 1
+        if m.memory_hit_at_5:
+            summary.queries_with_hits_at_5 += 1
+        if m.memory_hit_at_10:
+            summary.queries_with_hits_at_10 += 1
+
+        if m.candidate_recall_at_10:
+            summary.queries_with_candidate_recall_at_10 += 1
+        if m.candidate_recall_at_20:
+            summary.queries_with_candidate_recall_at_20 += 1
+        if m.candidate_recall_at_50:
+            summary.queries_with_candidate_recall_at_50 += 1
+
+        summary.avg_memory_mrr += m.memory_mrr
+
+    if summary.total_queries > 0:
+        summary.avg_memory_mrr /= summary.total_queries
+        summary.compute_rates()
+
+
 def evaluate_all_queries(
     db: Session, queries: List[Dict[str, Any]]
 ) -> MemoryEvaluationSummary:
@@ -232,29 +264,7 @@ def evaluate_all_queries(
     summary = MemoryEvaluationSummary(
         total_queries=len(query_metrics), per_query_metrics=query_metrics
     )
-
-    for m in query_metrics:
-        if m.memory_hit_at_1:
-            summary.queries_with_hits_at_1 += 1
-        if m.memory_hit_at_3:
-            summary.queries_with_hits_at_3 += 1
-        if m.memory_hit_at_5:
-            summary.queries_with_hits_at_5 += 1
-        if m.memory_hit_at_10:
-            summary.queries_with_hits_at_10 += 1
-
-        if m.candidate_recall_at_10:
-            summary.queries_with_candidate_recall_at_10 += 1
-        if m.candidate_recall_at_20:
-            summary.queries_with_candidate_recall_at_20 += 1
-        if m.candidate_recall_at_50:
-            summary.queries_with_candidate_recall_at_50 += 1
-
-        summary.avg_memory_mrr += m.memory_mrr
-
-    if summary.total_queries > 0:
-        summary.avg_memory_mrr /= summary.total_queries
-        summary.compute_rates()
+    _aggregate_metrics(summary, query_metrics)
 
     return summary
 
@@ -273,29 +283,36 @@ def format_report(summary: MemoryEvaluationSummary, verbose: bool = False) -> st
 
     lines.append("HIT RATE METRICS (Exact ID Match):")
     lines.append(
-        f"  Hit@1:             {summary.memory_hit_at_1_rate:.1%} ({summary.queries_with_hits_at_1}/{summary.total_queries})"
+        f"  Hit@1:             {summary.memory_hit_at_1_rate:.1%}"
+        f" ({summary.queries_with_hits_at_1}/{summary.total_queries})"
     )
     lines.append(
-        f"  Hit@3:             {summary.memory_hit_at_3_rate:.1%} ({summary.queries_with_hits_at_3}/{summary.total_queries})"
+        f"  Hit@3:             {summary.memory_hit_at_3_rate:.1%}"
+        f" ({summary.queries_with_hits_at_3}/{summary.total_queries})"
     )
     lines.append(
-        f"  Hit@5:             {summary.memory_hit_at_5_rate:.1%} ({summary.queries_with_hits_at_5}/{summary.total_queries})"
+        f"  Hit@5:             {summary.memory_hit_at_5_rate:.1%}"
+        f" ({summary.queries_with_hits_at_5}/{summary.total_queries})"
     )
     lines.append(
-        f"  Hit@10:            {summary.memory_hit_at_10_rate:.1%} ({summary.queries_with_hits_at_10}/{summary.total_queries})"
+        f"  Hit@10:            {summary.memory_hit_at_10_rate:.1%}"
+        f" ({summary.queries_with_hits_at_10}/{summary.total_queries})"
     )
     lines.append(f"  MRR:               {summary.avg_memory_mrr:.3f}")
     lines.append("")
 
     lines.append("CANDIDATE RECALL (Is it retrievable at all?):")
     lines.append(
-        f"  Top 10:            {summary.candidate_recall_at_10_rate:.1%} ({summary.queries_with_candidate_recall_at_10})"
+        f"  Top 10:            {summary.candidate_recall_at_10_rate:.1%}"
+        f" ({summary.queries_with_candidate_recall_at_10})"
     )
     lines.append(
-        f"  Top 20:            {summary.candidate_recall_at_20_rate:.1%} ({summary.queries_with_candidate_recall_at_20})"
+        f"  Top 20:            {summary.candidate_recall_at_20_rate:.1%}"
+        f" ({summary.queries_with_candidate_recall_at_20})"
     )
     lines.append(
-        f"  Top 50:            {summary.candidate_recall_at_50_rate:.1%} ({summary.queries_with_candidate_recall_at_50})"
+        f"  Top 50:            {summary.candidate_recall_at_50_rate:.1%}"
+        f" ({summary.queries_with_candidate_recall_at_50})"
     )
     lines.append("")
 
@@ -311,7 +328,9 @@ def format_report(summary: MemoryEvaluationSummary, verbose: bool = False) -> st
                 f"    Rank found: {m.memory_rank if m.memory_rank else 'Not in top 50'}"
             )
             lines.append(
-                f"    Hit@1/3/5/10: {m.memory_hit_at_1}/{m.memory_hit_at_3}/{m.memory_hit_at_5}/{m.memory_hit_at_10}"
+                f"    Hit@1/3/5/10: "
+                f"{m.memory_hit_at_1}/{m.memory_hit_at_3}"
+                f"/{m.memory_hit_at_5}/{m.memory_hit_at_10}"
             )
 
             if m.retrieved_chunks:
@@ -321,7 +340,10 @@ def format_report(summary: MemoryEvaluationSummary, verbose: bool = False) -> st
                         "[EXPECTED]" if chunk.memory_id == m.expected_id else "[WRONG]"
                     )
                     lines.append(
-                        f"      [{chunk.rank}] {marker} dist={chunk.distance:.4f} id={chunk.memory_id}: {chunk.chunk_text[:50]}..."
+                        f"      [{chunk.rank}] {marker}"
+                        f" dist={chunk.distance:.4f}"
+                        f" id={chunk.memory_id}:"
+                        f" {chunk.chunk_text[:50]}..."
                     )
             lines.append("")
 
